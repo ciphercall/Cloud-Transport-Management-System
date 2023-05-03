@@ -1,0 +1,276 @@
+﻿
+@using Cloud_Transport.Models
+@model Cloud_Transport.Models.DTO.MTransDTO
+
+@{
+    Layout = null;
+
+    var LoggedCompId = Model.CompanyID;
+    Int64 compid = Convert.ToInt64(LoggedCompId);
+
+
+    string companyName = "", address = "", contactNo = "";
+    CnfDbContext db = new CnfDbContext();
+    var SelectCompanyName = from n in db.AslCompanyDbSet
+
+                            where n.COMPID == compid
+                            select new { n.COMPNM, n.ADDRESS, n.CONTACTNO };
+
+    foreach (var n in SelectCompanyName)
+    {
+        companyName = n.COMPNM;
+        address = n.ADDRESS;
+        contactNo = n.CONTACTNO;
+    }
+    var compNm = companyName;
+    var Address = address;
+    var contactno = contactNo;
+
+    DateTime fdate = Convert.ToDateTime(Model.TransDate);
+    string ddt = fdate.ToString("dd-MMM-yyyy");
+    var voucherDate = ddt;
+
+    var voucherNo = Convert.ToInt64(Model.Transno);
+    string TransType = Convert.ToString(Model.TransType);
+    if(TransType=="MREC")
+    {
+        TransType = "RECEIVED VOUCHER";
+    }
+    else if(TransType=="MPAY")
+    {
+        TransType = "PAYMENT VOUCHER";
+    }
+    else if(TransType=="JOUR")
+    {
+        TransType = "JOURNAL VOUCHER";
+    }
+    else
+    {
+        TransType = "CONTRA VOUCHER";
+    }
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+    
+    
+    
+    
+    
+}
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+    @*<script type="text/javascript">
+            function ClosePrint() {
+                var print = document.getElementById("print");
+                print.style.visibility = "hidden";
+                //            print.display = false;
+
+                window.print();
+            }
+        </script>*@
+
+</head>
+
+<body style=" background-color:#fafafa">
+
+    @*<input id="print" tabindex="1" type="button" value="Print" onclick="ClosePrint()" />*@
+    <div style="width: 100%; margin: 0px auto; border: 1px solid #d3d3d3; border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); background: none repeat scroll 0 0 white;">
+        <table id="mainTable" border="0" width="100%">
+            <thead>
+                <tr>
+                    <td width="2%"></td>
+                    <td width="2%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="2%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="2%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+
+                    <td width="3%"></td>
+                    <td width="3%"></td>
+                    <td width="3%"></td>
+                    <td width="3%"></td>
+
+                </tr>
+                <tr style="background-color: white">
+                    <td colspan="18" align="left">
+                        <h3 style="color: black;padding:4px">@compNm</h3>
+                        <p style="color:black;padding-left:4px">@Address<span>  @contactno</span></p>
+                    </td>
+
+                    <td colspan="6" style="color: black;padding:8px" align="right">
+                        Powered By<br />Alchemy Software
+                    </td>
+
+                </tr>
+
+                <tr>
+                    <td colspan="4"></td>
+                    <td colspan="14" align="center" style="padding-left:15px; font-weight: bold">@TransType </td>
+                    <td align="right" colspan="6" style="padding:8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+                </tr>
+                <tr>
+
+                    <td colspan="4" align="left" style="font-weight:bold">Voucher No: </td>
+                    <td colspan="8" align="left" style="font-weight:bold">@voucherNo </td>
+
+                    <td colspan="8" align="right" style="font-weight:bold">Voucher Date: </td>
+                    <td colspan="4" align="right" style="font-weight:bold">@voucherDate </td>
+
+                </tr>
+              
+
+                <tr style="background-color: white; outline: thin solid; font-size: small">
+
+                    <td colspan="2" style="color:black; " align="center">SL</td>
+                    <td colspan="5" style="color:black;" align="center">Debited To</td>
+                    <td colspan="5" style="color: black; " align="center">Credited To</td>
+                    <td colspan="4" style="color: black; " align="center">Remarks</td>
+                    <td colspan="4" style="color:black; " align="center">Debit Amount</td>
+                    <td colspan="4" style="color: black;" align="center">Credit Amount</td>
+                  
+
+
+
+
+                </tr>
+
+
+
+
+            </thead>
+
+            <tbody>
+
+
+
+                @{
+
+                    var search_data_mv = (from n in db.MtransdbSet
+                                              where n.COMPID == compid && n.TRANSTP == Model.TransType &&
+                                                  n.TRANSDT == fdate && n.TRANSNO == Model.Transno 
+                                              select n).ToList();
+                    Int64 i = 0;
+                    decimal grandtotal = 0;
+             
+                    string debit = "",credit="";
+
+                }
+             
+
+                @foreach (var ss in search_data_mv)
+                {
+                    i++;
+                    var account_debit = (from n in db.GlAcchartDbSet where n.COMPID == ss.COMPID && n.ACCOUNTCD == ss.DEBITCD select n).ToList();
+                    var account_credit = (from n in db.GlAcchartDbSet where n.COMPID == ss.COMPID && n.ACCOUNTCD == ss.CREDITCD select n).ToList();
+                    foreach(var foring in account_debit)
+                    {
+                        debit = foring.ACCOUNTNM;
+                    }
+                    foreach (var foring in account_credit)
+                    {
+                        credit = foring.ACCOUNTNM;
+                    }
+                    <tr style="outline: thin solid; font-size: small">
+
+                        <td colspan="2" align="center">
+                            @i
+                        </td>
+
+                        <td colspan="5" align="center">
+                            @debit
+                        </td>
+                        <td colspan="5" align="center">
+                            @credit
+                        </td>
+                        <td colspan="4" align="center">
+                            @Html.DisplayFor(modelItem => ss.REMARKS)
+                        </td>
+                        <td colspan="4" align="right">
+                            @Html.DisplayFor(modelItem => ss.AMOUNT)
+                        </td>
+                        <td colspan="4" align="right">
+                            @Html.DisplayFor(modelItem => ss.AMOUNT)
+                        </td>
+                        
+                    </tr>
+
+                    grandtotal = Convert.ToDecimal(grandtotal + ss.AMOUNT);
+
+
+                }
+                <tr style="outline: thin solid; font-size: small;font-weight:bold">
+                    <td colspan="16" align="right">Total :</td>
+                    <td colspan="4" align="right">@grandtotal</td>
+                    <td colspan="4" align="right">@grandtotal</td>
+         
+                </tr>
+                <tr></tr>
+                <tr></tr>
+                <tr></tr>
+                <tr></tr>
+                <tr></tr>
+                @{
+                    string gtotal = Convert.ToString(grandtotal);
+                    string totalspell = SpellAmount.MoneyConvFn(gtotal);
+                }
+                <tr>
+                    <td colspan="3">In Words:</td>
+                    <td colspan="21">@totalspell</td>
+                </tr>
+                @for (int a = 0; a < 15; a++)
+                {
+                    <tr>
+                        <td colspan="24"></td>
+                    </tr>
+                }
+
+
+                <tr>
+                    <td colspan="3"></td>
+                    <td colspan="5">____________________________</td>
+                    <td colspan="3"></td>
+                    <td colspan="5">____________________________</td>
+                    <td colspan="3"></td>
+                    <td colspan="5">____________________________</td>
+                </tr>
+                <tr>
+                    <td colspan="24"></td>
+                </tr>
+                <tr>
+                    <td colspan="24"></td>
+                </tr>
+                <tr>
+                    <td colspan="4"></td>
+                    <td colspan="4">Prepared By</td>
+                    <td colspan="4"></td>
+                    <td colspan="4">Checked By</td>
+                    <td colspan="4"></td>
+                    <td colspan="4">Authorized By</td>
+                </tr>
+               
+
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

@@ -1,0 +1,236 @@
+﻿@using Cloud_Transport.DataAccess
+@using Cloud_Transport.Models
+@model Cloud_Transport.Models.DTO.Tms_ExpenseDTO
+
+
+@{
+    ViewBag.Title = "GetTmsExpenseMemo";
+    Layout = null;
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    CnfDbContext db = new CnfDbContext();
+
+    var companyId = Convert.ToInt64(Model.COMPID);
+    var month_Year = Convert.ToString(Model.TRANSMY);
+    var transNo = Convert.ToInt64(Model.TRANSNO);
+    var TripNo = Convert.ToInt64(Model.TRIPNO);
+    var CostPid = Convert.ToInt64(Model.COSTPID);
+    var ExpenseDate = Convert.ToString(Model.TRANSDT);
+
+    string companyName = "", address = "", address2 = "", contactNo = "";
+    var SelectUserName = from m in db.AslCompanyDbSet where m.COMPID == companyId select new { m.COMPNM, m.ADDRESS, m.CONTACTNO };
+    foreach (var n in SelectUserName)
+    {
+        companyName = n.COMPNM;
+        address = n.ADDRESS;
+        //address2 = n.ADDRESS2;
+        contactNo = n.CONTACTNO;
+    }
+    var compNm = companyName;
+    var Address = address;
+    var contactno = contactNo;
+
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+
+
+    Decimal totalAmount = 0;
+    String VehicleNo = "";
+    var findCostpoolName = (from m in db.GlCostPoolDbSet where m.COMPID == companyId && m.COSTPID == CostPid select new { m.COSTPID, m.COSTPNM }).ToList();
+    foreach (var item in findCostpoolName)
+    {
+        VehicleNo = item.COSTPNM;
+        break;
+    }
+
+
+
+
+
+
+
+
+    var findExpenseData = from n in db.TmsExpenseDbSet
+                          where n.COMPID == companyId && n.TRANSNO == transNo && n.TRANSMY == month_Year
+                          select new { n.DEBITCD, n.AMOUNT, n.REMARKS };
+}
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+
+</head>
+<body style=" background-color:#fafafa;">
+    <div style="width: 960px; margin: 0px auto; border: 1px solid #d3d3d3; border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); background: none repeat scroll 0 0 white;">
+        <table id="mainTable" border="0" width="100%">
+            <thead>
+                <tr>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                </tr>
+
+                <tr style="background-color: #00689b">
+                    @if (companyId == 101)
+                    {
+                        <td colspan="1" style="background-color: white;">
+                            <img src="~/Content/Company-Logo/101_UTL.png" width="100" height="70" alt="" />
+                        </td>
+                        <td colspan="7">
+                            <h3 style="color: white;padding:4px">@compNm</h3>
+                            <p style="color:white;padding-left:4px">@Address<br /> @address2</p>
+                        </td>
+                        <td colspan="2" style="color: white;padding:8px" align="right">
+                            Powered By<br />Alchemy Software
+                        </td>
+                    }
+                    else
+                    {
+                        <td colspan="7">
+                            <h3 style="color: white;padding:4px">@compNm</h3>
+                            <p style="color:white;padding-left:4px">@Address<br />@address2</p>
+                        </td>
+                        <td colspan="3" style="color: white;padding:8px" align="right">
+                            Powered By<br />Alchemy Software
+                        </td>
+                    }
+                </tr>
+
+                <tr>
+                    <td colspan="7" align="left" style="padding: 4px; font-weight: bold">Expense-Trip Memo</td>
+                    <td align="right" colspan="3" style="padding:8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+                </tr>
+
+                <tr style="outline: thin solid">
+                    <td colspan="1" align="left">Expense Date</td>
+                    <td colspan="2" align="left" style="font-weight: bold">: @ExpenseDate</td>
+                    <td colspan="1" align="right">Invoice:</td>
+                    <td colspan="2" align="left" style="font-weight: bold">@transNo</td>
+                    <td colspan="1" align="right">Trip No:</td>
+                    <td colspan="3" align="left" style="font-weight: bold">@TripNo</td>
+                </tr>
+                <tr style="outline: thin solid #807575">
+                    <td colspan="1" align="left">Vehicle No</td>
+                    <td colspan="9" align="left" style="font-weight: bold">: @VehicleNo</td>
+                </tr>
+
+                <tr style="background-color: #00689b; outline: thin solid">
+                    <td colspan="6" style="color: white; padding: 4px" align="center">Expense Head Particulars</td>
+                    <td colspan="3" style="color: white; padding: 4px" align="center">Amount</td>
+                    <td colspan="3" style="color: white; padding: 4px" align="center">Remarks</td>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var item in findExpenseData)
+                {
+                    String headParticulars = "";
+                    Int64 headCD = Convert.ToInt64(companyId + "401");
+                    var find_Accounthead = (from n in db.GlAcchartDbSet where n.COMPID == companyId && n.HEADCD == headCD && n.ACCOUNTCD == item.DEBITCD select new { n.ACCOUNTCD, n.ACCOUNTNM }).ToList();
+                    foreach (var get in find_Accounthead)
+                    {
+                        headParticulars = get.ACCOUNTNM;
+                    }
+
+                    string S_AMOUNT = Convert.ToString(item.AMOUNT);
+                    S_AMOUNT = CommainAmount.AmountwithComma(S_AMOUNT);
+                    <tr style="outline: thin solid #807575">
+                        <td colspan="6" style="padding:4px">
+                            @headParticulars
+                        </td>
+                        <td colspan="3" align="right" style="padding:4px">
+                            @S_AMOUNT
+                        </td>
+                        <td colspan="3" align="left" style="padding:4px">
+                            @Html.DisplayFor(modelItem => item.REMARKS)
+                        </td>
+                    </tr>
+                    totalAmount = totalAmount + Convert.ToDecimal(item.AMOUNT);
+                }
+                @{
+                    string S_totalAmount = Convert.ToString(totalAmount);
+                    S_totalAmount = CommainAmount.AmountwithComma(S_totalAmount);
+                }
+                <tr>
+                    <td align="right" colspan="6"><strong>Total Amount:</strong></td>
+                    <td align="right" colspan="3" style="font-weight: bold;padding:4px">
+                        @S_totalAmount
+                    </td>
+                    <td colspan="3"></td>
+                </tr>
+                @{
+                    string amount = "", InWords = "";
+                    amount = Convert.ToString(totalAmount);
+                    InWords = SpellAmount.MoneyConvFn(amount);
+                }
+                <tr>
+                    <td><br /></td>
+                </tr>
+                <tr>
+                    <td colspan="10" align="left" style="padding-left:8px">In Words : @InWords</td>
+                </tr>
+                <tr>
+                    <td align="center" colspan="10"><strong>THANK YOU</strong></td>
+                </tr>
+                <tr>
+                    <td><br /></td>
+                </tr>
+                <tr>
+                    <td><br /></td>
+                </tr>
+                <tr>
+                    <td colspan="2" align="left" style="padding-left:8px"><hr></td>
+                    <td colspan="2"></td>
+                    <td colspan="2" align="left" style="padding-left:8px"><hr></td>
+                    <td colspan="2"></td>
+                    <td colspan="2" align="left" style="padding-left:8px"><hr></td>
+                </tr>
+                <tr>
+                    <td colspan="2" align="center" style="padding-left:8px">Receiver's Signature</td>
+                    <td colspan="2"></td>
+                    <td colspan="2" align="center" style="padding-left:8px">Checked By</td>
+                    <td colspan="2"></td>
+                    <td colspan="2" align="center" style="padding-left:8px">Authorized By</td>
+                </tr>
+
+
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,556 @@
+﻿@using System.Web.UI.WebControls
+@using Cloud_Transport.Models
+@model Cloud_Transport.Models.PageModel
+
+@{
+    ViewBag.Title = "Index";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    Int64 LoggedCompId = Convert.ToInt64(HttpContext.Current.Session["loggedCompID"].ToString());
+    Int64 loggedUserID = Convert.ToInt64(System.Web.HttpContext.Current.Session["loggedUserID"]);
+    CnfDbContext db = new CnfDbContext();
+
+    var createStatus = "";
+    var updateStatus = "";
+    var deleteStatus = "";
+    var status = "";
+    var checkPermisiion = (from m in db.AslRoleDbSet
+                           where m.COMPID == LoggedCompId && m.USERID == loggedUserID && m.CONTROLLERNAME == "TmsTrip"
+                           select m).ToList();
+
+
+    foreach (var x in checkPermisiion)
+    {
+        status = x.STATUS.ToString();
+        createStatus = x.INSERTR.ToString();
+        updateStatus = x.UPDATER.ToString();
+        deleteStatus = x.DELETER.ToString();
+    }
+
+
+    if (createStatus == "I" || status == "I")
+    {
+        Response.Redirect("~/GraphView/Index");
+    }
+
+    List<SelectListItem> listofCostpoolName = new List<SelectListItem>();
+    var findCostpoolName = (from m in db.GlCostPoolDbSet where m.COMPID == LoggedCompId select new { m.COSTPID, m.COSTPNM }).ToList();
+    foreach (var item in findCostpoolName)
+    {
+        listofCostpoolName.Add(new SelectListItem { Text = item.COSTPNM.ToString(), Value = Convert.ToString(item.COSTPID) });
+    }
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+}
+
+<link href="~/Content/bootstrap_datepicker_css/datepicker.css" rel="stylesheet" />
+<link href="~/Content/bootstrap_datepicker_css/datepicker3.css" rel="stylesheet" />
+<script src="~/Scripts/bootstrap-datepicker.js"></script>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    @Html.HiddenFor(model => model.TmsTripmst.COMPID, new { id = "txtCompId", @Value = LoggedCompId })
+
+    <div id="contentHeaderBox">
+        <h1 style="padding-left: 16px">Create Trip
+            @if (TempData["tripmasterSuccessMessage"] != null)
+            {
+                <span style="color: #BD7F1C;    padding-left: 40px;">@TempData["tripmasterSuccessMessage"] </span>
+            }
+            @if (TempData["tripSuccessMessage"] != null)
+            {
+                <span style="color: #BD7F1C;    padding-left: 40px;">@TempData["tripSuccessMessage"] </span>
+            }
+        </h1>
+
+      
+
+        <div class="btn-group pull-right" id="editOption">
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" aria-expanded="false">
+                <i class="fa fa-cog"></i>
+            </button>
+            <ul class="dropdown-menu pull-right" style="" role="menu">
+                @if (updateStatus == "A")
+                {
+                    <li><a href="@Url.Action("Update", "TmsTrip")"><i class="fa fa-edit"></i> Update</a></li>
+                }
+            </ul>
+        </div>
+
+    </div>
+    <br />
+    <div class="col-md-12">
+        <div class="form-group">
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("Vehicle No*", htmlAttributes: new { @class = "control-label input-sm" })
+                </div>
+                <div class="col-md-3">
+                    @if (TempData["R_TripNo"] != null)
+                    {
+                        @Html.DropDownListFor(model => model.TmsTripmst.COSTPID, listofCostpoolName, new { @class = "form-control input-sm", @readonly = "readonly" })
+                    }
+                    else
+                    {
+                        @Html.DropDownListFor(model => model.TmsTripmst.COSTPID, listofCostpoolName, new { @class = "form-control input-sm", id = "txtCOSTPID", tabindex = "1", autofocus = true })
+                    }
+                </div>
+                <div class="col-md-1">
+                    @Html.Label("Trip Date*", htmlAttributes: new { @class = "control-label input-sm" })
+                </div>
+                <div class="col-md-2">
+                    @if (TempData["R_TripNo"] != null)
+                    {
+                        @Html.TextBoxFor(model => model.TripDate, new { @class = "form-control input-sm", @readonly = "readonly" })
+                    }
+                    else
+                    {
+                        @Html.TextBoxFor(model => model.TripDate, new { @class = "form-control input-sm", id = "txtTripDate", tabindex = "2" })
+                    }
+                    @Html.HiddenFor(model => model.TmsTripmst.TRIPMY, new { @class = "form-control input-sm", id = "txttripMonthYear" })
+                </div>
+                <div class="col-md-1">
+                    @Html.Label("Round-Trip No", htmlAttributes: new { @class = "control-label input-sm" })
+                </div>
+                <div class="col-md-2">
+                    @Html.TextBoxFor(model => model.TmsTripmst.RTRIPNO, new {@class = "form-control input-sm", id = "txtRTRIPNO", @readonly = "readonly"})
+                </div>
+                @*<div class="col-md-1">
+                    @if (TempData["SubmitButton"] != null)
+                    {
+                        <input id="btnSubmit" type="submit" class="btn btn-info" value="Print" name="command" />
+                    }
+                </div>*@
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("Remarks", htmlAttributes: new { @class = "control-label input-sm" })
+                </div>
+                <div class="col-md-3">
+                    @if (TempData["R_TripNo"] != null)
+                    {
+                        @Html.TextBoxFor(model => model.TmsTripmst.REMARKS, new { @class = "form-control input-sm", id = "txtRemarks", @readonly = "readonly" })
+                    }
+                    else
+                    {
+                        @Html.TextBoxFor(model => model.TmsTripmst.REMARKS, new { @class = "form-control input-sm", id = "txtRemarks", tabindex = "3" })
+                    }
+                </div>
+                <div class="col-md-1">
+                    @Html.Label("Qty-Fuel", htmlAttributes: new { @class = "control-label input-sm" })
+                </div>
+                <div class="col-md-2">
+                    @if (TempData["R_TripNo"] != null)
+                    {
+                        @Html.TextBoxFor(model => model.TmsTripmst.QTYFUEL, new { @type = "number", @step = "any", @min = "0", @max = "999999999999999", @class = "form-control input-sm", id = "txtQTYFUEL", @readonly = "readonly" })
+                    }
+                    else
+                    {
+                        @Html.TextBoxFor(model => model.TmsTripmst.QTYFUEL, new { @type = "number", @step = "any", @min = "0", @max = "999999999999999", @class = "form-control input-sm", id = "txtQTYFUEL", tabindex = "4" })
+                    }
+                </div>
+                <div class="col-md-1">
+                    @Html.Label("Qty-Mobil", htmlAttributes: new { @class = "control-label input-sm" })
+                </div>
+                <div class="col-md-2">
+                    @if (TempData["R_TripNo"] != null)
+                    {
+                        @Html.TextBoxFor(model => model.TmsTripmst.QTYMOBIL, new { @type = "number", @step = "any", @min = "0", @max = "999999999999999", @class = "form-control input-sm", id = "txtQTYMOBIL", @readonly = "readonly" })
+                    }
+                    else
+                    {
+                        @Html.TextBoxFor(model => model.TmsTripmst.QTYMOBIL, new { @type = "number", @step = "any", @min = "0", @max = "999999999999999", @class = "form-control input-sm", id = "txtQTYMOBIL", tabindex = "5" })
+                    }
+                </div>
+
+
+                @Html.TextBoxFor(model => model.TmsTripmst.INSLTUDE, new { id = "latlonPos", style = "display: none;" })
+                <input id="lat" type="hidden" />
+                <input id="lon" type="hidden" />
+
+                <div class="col-md-1">
+                    @if (TempData["SubmitButton"] != null)
+                    {
+                        <input id="btnSubmit" type="submit" class="btn btn-info" value="Refresh" name="command" />
+                    }
+                    else
+                    {
+                        <input id="btnSubmit" type="submit" class="btn btn-info" value="Submit" name="command" />
+                    }
+
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <hr />
+        </div>
+    </div>
+    <div class="col-md-12" id="Child_tripData">
+        @if (TempData["R_TripNo"] != null)
+        {
+            @Html.HiddenFor(model => model.TmsTrip.TRIPNO, new { @readonly = "readonly" })
+
+            <div class="row">
+                <div class="col-md-2">
+                    <span>Trip Date</span>
+                    @Html.TextBoxFor(model => model.TripChildDate, new { @class = "form-control input-sm", id = "txtTripChildDate", autofocus = "True" })
+                </div>
+                <div class="col-md-2">
+                    <span>Trip From</span>
+                    @Html.TextBoxFor(model => model.TmsTrip.TRIPFR, new { @class = "form-control input-sm", id = "txttripFor", tabindex = "1" })
+                </div>
+                <div class="col-md-2">
+                    <span>Trip To</span>
+                    @Html.TextBoxFor(model => model.TmsTrip.TRIPTO, new { @class = "form-control input-sm", id = "txttripTo", tabindex = "2" })
+                </div>
+                <div class="col-md-2">
+                    @{
+                        List<SelectListItem> listofTripType = new List<SelectListItem>();
+                        listofTripType.Add(new SelectListItem { Text = "LOCAL", Value = "LOCAL" });
+                        listofTripType.Add(new SelectListItem { Text = "IMPORT", Value = "IMPORT" });
+                        listofTripType.Add(new SelectListItem { Text = "EXPORT", Value = "EXPORT" });
+
+                    }
+                    <span>Trip Type</span>
+                    @Html.DropDownListFor(model => model.TmsTrip.TRIPTP, listofTripType, new { @class = "form-control input-sm", id = "txttripType", tabindex = "3" })
+                </div>
+                <div class="col-md-3">
+                    @{
+                        List<SelectListItem> listofPartyname = new List<SelectListItem>();
+                        Int64 headCD = Convert.ToInt64(LoggedCompId + "103");
+                        var find_Partyname = (from n in db.GlAcchartDbSet where n.COMPID == LoggedCompId && n.HEADCD == headCD select new { n.ACCOUNTCD, n.ACCOUNTNM }).ToList();
+                        foreach (var item in find_Partyname)
+                        {
+                            listofPartyname.Add(new SelectListItem { Text = item.ACCOUNTNM.ToString(), Value = Convert.ToString(item.ACCOUNTCD) });
+                        }
+                    }
+                    <span>Party name</span>
+                    @Html.DropDownListFor(model => model.TmsTrip.PARTYID, listofPartyname, "-Select-", new { @class = "form-control input-sm", id = "txtPartyId", tabindex = "4" })
+                </div>
+
+
+            </div>
+            <br />
+            <div class="row">
+                <div class="col-md-2">
+                    <span>Fare</span>
+                    @Html.TextBoxFor(model => model.TmsTrip.AMTFARE, new { @type = "number", @step = "any", @min = "0", @max = "999999999999999", @class = "form-control input-sm", id = "txt_AMTFARE", tabindex = "5" })
+                </div>
+                <div class="col-md-2">
+                    <span>Demurrage</span>
+                    @Html.TextBoxFor(model => model.TmsTrip.AMTDEMI, new { @type = "number", @step = "any", @min = "0", @max = "999999999999999", @class = "form-control input-sm", id = "txt_AMTDEMI", tabindex = "6" })
+                </div>
+                <div class="col-md-2">
+                    <span>Other Charge</span>
+                    @Html.TextBoxFor(model => model.TmsTrip.AMTOTC, new { @type = "number", @step = "any", @min = "0", @max = "999999999999999", @class = "form-control input-sm", id = "txt_AMTOTC", tabindex = "7" })
+                </div>
+                <div class="col-md-2">
+                    <span>Total Receivable</span>
+                    @Html.TextBoxFor(model => model.TmsTrip.AMTTOT, new { @type = "number", @step = "any", @min = "0", @max = "999999999999999", @class = "form-control input-sm", id = "txt_AMTTOT", @readonly = "readonly", tabindex = "8" })
+                </div>
+                <div class="col-md-3">
+                    <span>Collect Destination</span>
+                    @Html.TextBoxFor(model => model.TmsTrip.CDESTN, new { @class = "form-control input-sm", id = "txtCollectDestination", tabindex = "9" })
+                </div>
+                @*<div class="col-md-3">
+                        <span>Remarks</span>
+                        @Html.TextBoxFor(model => model.TmsTrip.REMARKS, new { @class = "form-control input-sm", id = "txtRemarks" })
+                    </div>*@
+
+                @if (TempData["ShowAddButton"] != null)
+                {
+                    <div class="col-md-1">
+                        <span></span>
+                        <input type="submit" class="btn btn-info" value="Add" id="btnAdd" name="command" style="margin-top: 20px; margin-left: 5px" />
+                    </div>
+                }
+                else if (TempData["ShowUpdateButton"] != null)
+                {
+                    <div class="col-md-1">
+                        <span></span>
+                        <input type="submit" class="btn btn-info" value="Update" id="btnUpdate" name="command" style="margin-top: 20px; margin-left: 5px" />
+                    </div>
+                }
+
+            </div>
+            <br />
+            <div class="row">
+                @if (TempData["R_TripNo"] != null && TempData["tripMonthYear"] != null && TempData["Costpid"] != null)
+                {
+                    Int64 costpid = Convert.ToInt64(TempData["Costpid"]);
+                    String monthYear = Convert.ToString(TempData["tripMonthYear"]);
+                    Int64 r_tripNo = Convert.ToInt64(TempData["R_TripNo"]);
+
+
+                    var tmsTripResult = (from m in db.TmsTripDbSet where m.COMPID == LoggedCompId && m.COSTPID == costpid && m.TRIPMY == monthYear && m.RTRIPNO == r_tripNo select m).ToList();
+                    <div class="panel panel-primary">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <tr>
+                                    <td style="padding-left: 16px">
+                                        <h6>Trip Date</h6>
+                                    </td>
+                                    <td>
+                                        <h6>Trip No</h6>
+                                    </td>
+                                    <td>
+                                        <h6>Trip From</h6>
+                                    </td>
+                                    <td>
+                                        <h6>Trip To</h6>
+                                    </td>
+                                    <td>
+                                        <h6>Trip Type</h6>
+                                    </td>
+                                    <td>
+                                        <h6>Party name</h6>
+                                    </td>
+                                    <td>
+                                        <h6>Collect Destination</h6>
+                                    </td>
+                                    <td>
+                                        <h6>Fare</h6>
+                                    </td>
+                                    <td>
+                                        <h6>Demurrage</h6>
+                                    </td>
+                                    <td>
+                                        <h6>Other Charge</h6>
+                                    </td>
+                                    <td>
+                                        <h6>Total Receivable</h6>
+                                    </td>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+
+                                @foreach (var item in tmsTripResult)
+                                {
+                                    String PartyName = "";
+                                    Int64 headcd = Convert.ToInt64(LoggedCompId + "103");
+                                    var findPname = (from n in db.GlAcchartDbSet where n.COMPID == LoggedCompId && n.HEADCD == headcd && n.ACCOUNTCD == item.PARTYID select new { n.ACCOUNTCD, n.ACCOUNTNM }).ToList();
+                                    foreach (var get in findPname)
+                                    {
+                                        PartyName = get.ACCOUNTNM;
+                                        break;
+                                    }
+
+
+                                    String tripChildDate = "";
+                                    DateTime TRPdate = Convert.ToDateTime(item.TRIPDT);
+                                    tripChildDate = TRPdate.ToString("dd-MMM-yyyy");
+
+                                    <tr>
+                                        @Html.HiddenFor(model => item.COMPID, new { style = "width:3em;", @readonly = "readonly" })
+                                        @Html.HiddenFor(model => item.COSTPID, new { style = "width:3em;", @readonly = "readonly" })
+                                        @Html.HiddenFor(model => item.TRIPMY, new { style = "width:3em;", @readonly = "readonly" })
+                                        @Html.HiddenFor(model => item.RTRIPNO, new { style = "width:3em;", @readonly = "readonly" })
+                                        <td style="padding-left: 16px">
+                                            @tripChildDate
+                                        </td>
+                                        <td>
+                                            @Html.DisplayFor(model => item.TRIPNO, new { style = "width:10em;", id = "txtExpNm", @readonly = "readonly" })
+                                        </td>
+                                        <td>
+                                            @Html.DisplayFor(model => item.TRIPFR, new { style = "width:10em;", id = "txtExpNm", @readonly = "readonly" })
+                                        </td>
+                                        <td>
+                                            @Html.DisplayFor(model => item.TRIPTO, new { style = "width: 7em;", id = "txtRemarks", @readonly = "readonly" })
+                                        </td>
+                                        <td>
+                                            @Html.DisplayFor(model => item.TRIPTP, new { style = "width: 7em;", id = "txtRemarks", @readonly = "readonly" })
+                                        </td>
+                                        <td>
+                                            @PartyName
+                                        </td>
+                                        <td>
+                                            @Html.DisplayFor(model => item.CDESTN, new { style = "width: 7em;", id = "txtRemarks", @readonly = "readonly" })
+                                        </td>
+                                        <td>
+                                            @Html.DisplayFor(model => item.AMTFARE, new { style = "width: 7em;", id = "txtRemarks", @readonly = "readonly" })
+                                        </td>
+                                        <td>
+                                            @Html.DisplayFor(model => item.AMTDEMI, new { style = "width: 7em;", id = "txtRemarks", @readonly = "readonly" })
+                                        </td>
+                                        <td>
+                                            @Html.DisplayFor(model => item.AMTOTC, new { style = "width: 7em;", id = "txtRemarks", @readonly = "readonly" })
+                                        </td>
+                                        <td>
+                                            @Html.DisplayFor(model => item.AMTTOT, new { style = "width: 7em;", id = "txtRemarks", @readonly = "readonly" })
+                                        </td>
+                                        <td>
+                                            <span>
+                                                <a href="@Url.Action("UpdateTrip_Create", new { id = item.ID, cid = item.COMPID, Costpid = item.COSTPID, tripdate = item.TRIPDT, tripMonth = item.TRIPMY, r_tripNo = item.RTRIPNO, tripno = item.TRIPNO })" class="btn btn-sm btn-info">
+                                                    <span class="glyphicon glyphicon-pencil"></span>
+                                                </a>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span>
+                                                <a href="@Url.Action("DeleteTrip_Create", new { id = item.ID, cid = item.COMPID, Costpid = item.COSTPID,tripdate = item.TRIPDT, tripMonth = item.TRIPMY, r_tripNo = item.RTRIPNO, tripno =item.TRIPNO })" class="btn btn-sm btn-danger">
+                                                    <span class="glyphicon glyphicon-remove"></span>
+                                                </a>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+
+                            </table>
+                        </div>
+                    </div>
+                }
+            </div>
+                        }
+    </div>
+
+
+                        //Latitute & longitude
+                        <script src="http://maps.google.com/maps/api/js?sensor=false">
+                        </script>
+
+                        <script language="javascript" type="text/javascript">
+                            $(function () {
+                                navigator.geolocation.getCurrentPosition(showPosition);
+
+                                //navigator.geolocation.getCurrentPosition(showPosition, positionError);
+
+                                function showPosition(position) {
+                                    var coordinates = position.coords;
+                                    $("#lat").val(coordinates.latitude);
+                                    $("#lon").val(coordinates.longitude);
+
+                                    $("#latlonPos").val(
+                                        $("#lat").val() + "," + $("#lon").val()
+                                    );
+                                    $("#latlonRms").val(
+                                        $("#lat").val() + "," + $("#lon").val()
+                                    );
+                                }
+                            });
+                        </script>
+
+                        <script type="text/javascript">
+                            $(document).ready(function () {
+
+
+                                $('#txtTripDate').datepicker({
+                                    format: "dd-M-yyyy",
+                                    autoclose: true,
+                                    todayHighlight: true,
+                                    showOnFocus: true,
+                                }).on('show', function (e) {
+                                    if (e.date) {
+                                        $(this).data('stickyDate', e.date);
+                                    } else {
+                                        $(this).data('stickyDate', null);
+                                    }
+                                }).on('hide', function (e) {
+                                    var stickyDate = $(this).data('stickyDate');
+
+                                    if (!e.date && stickyDate) {
+                                        $(this).datepicker('setDate', stickyDate);
+                                        $(this).data('stickyDate', null);
+                                    }
+                                    document.getElementById("txtRemarks").focus();
+                                });
+
+                                $('#txtTripDate').change(function () {
+                                    var dateText = $("#txtTripDate").val();
+
+                                    var txt_tripMonthYear = document.getElementById('txttripMonthYear');
+                                    $.getJSON(
+                                        '/TmsExpense/GetMonthYear', { "DateText": dateText, },
+                                        function (result) {
+                                            txt_tripMonthYear.value = result.myear;
+                                        });
+                                    $("#txttripMonthYear").val("");
+                                });
+
+
+                                //$('#Child_tripData').hide();
+                                $('#btnSubmit').click(function () {
+                                    var date = $("#txtTripDate").val();
+                                    var myear = $("#txttripMonthYear").val();
+                                    if (date != "" && myear != "") {
+                                        $('#Child_tripData').show();
+                                        $('#btnSubmit').hide();
+                                        //$('#txtCOSTPID').attr('readonly', true);
+                                        //$('#txtTripDate').attr('readonly', true);
+                                        //$('#txtQTYFUEL').attr('readonly', true);
+                                        //$('#txtQTYMOBIL').attr('readonly', true);
+                                        //$('#txtRemarks').attr('readonly', true);
+                                    } else {
+                                        $('#btnSubmit').show();
+                                        $('#Child_tripData').hide();
+                                    }
+
+                                });
+
+
+
+
+                                $('#txtTripChildDate').datepicker({
+                                    format: "dd-M-yyyy",
+                                    autoclose: true,
+                                    todayHighlight: true,
+                                    showOnFocus: true,
+                                }).on('show', function (e) {
+                                    if (e.date) {
+                                        $(this).data('stickyDate', e.date);
+                                    } else {
+                                        $(this).data('stickyDate', null);
+                                    }
+                                }).on('hide', function (e) {
+                                    var stickyDate = $(this).data('stickyDate');
+
+                                    if (!e.date && stickyDate) {
+                                        $(this).datepicker('setDate', stickyDate);
+                                        $(this).data('stickyDate', null);
+                                    }
+                                    document.getElementById("txttripFor").focus();
+                                });
+
+
+
+                                $("#txt_AMTFARE").change(function () {
+                                    document.getElementById('txt_AMTTOT').value = (parseFloat(document.getElementById('txt_AMTFARE').value) + parseFloat(document.getElementById('txt_AMTDEMI').value) + parseFloat(document.getElementById('txt_AMTOTC').value)).toFixed(2);
+                                    document.getElementById("txt_AMTDEMI").focus();
+                                });
+                                $("#txt_AMTDEMI").change(function () {
+                                    document.getElementById('txt_AMTTOT').value = (parseFloat(document.getElementById('txt_AMTFARE').value) + parseFloat(document.getElementById('txt_AMTDEMI').value) + parseFloat(document.getElementById('txt_AMTOTC').value)).toFixed(2);
+                                    document.getElementById("txt_AMTOTC").focus();
+                                });
+                                $("#txt_AMTOTC").change(function () {
+                                    document.getElementById('txt_AMTTOT').value = (parseFloat(document.getElementById('txt_AMTFARE').value) + parseFloat(document.getElementById('txt_AMTDEMI').value) + parseFloat(document.getElementById('txt_AMTOTC').value)).toFixed(2);
+                                    document.getElementById("txt_AMTTOT").focus();
+                                });
+
+                            })
+                        </script>
+                        }

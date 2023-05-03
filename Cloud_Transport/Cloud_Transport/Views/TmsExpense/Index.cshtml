@@ -1,0 +1,428 @@
+﻿@using Cloud_Transport.Models
+@model Cloud_Transport.Models.DTO.Tms_ExpenseDTO
+
+@{
+    ViewBag.Title = "Index";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+
+    CnfDbContext db = new CnfDbContext();
+    Int64 LoggedCompId = Convert.ToInt64(System.Web.HttpContext.Current.Session["loggedCompID"]);
+    Int64 loggedUserID = Convert.ToInt64(System.Web.HttpContext.Current.Session["loggedUserID"]);
+
+
+    var createStatus = "";
+    var updateStatus = "";
+    var deleteStatus = "";
+    var status = "";
+
+    var checkPermisiion = (from m in db.AslRoleDbSet
+                           where m.COMPID == LoggedCompId && m.USERID == loggedUserID && m.CONTROLLERNAME == "TmsExpense"
+                           select m).ToList();
+
+
+    foreach (var x in checkPermisiion)
+    {
+        status = x.STATUS.ToString();
+        createStatus = x.INSERTR.ToString();
+        updateStatus = x.UPDATER.ToString();
+        deleteStatus = x.DELETER.ToString();
+    }
+
+
+    if (createStatus == "I" || status == "I")
+    {
+        Response.Redirect("~/GraphView/Index");
+    }
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+    string converttoString = Convert.ToString(currentDateTime.ToString("dd-MMM-yyyy"));
+    string CurrentYear = converttoString.Substring(9, 2);
+    string CurrentMonth = converttoString.Substring(3, 3).ToUpper();
+    string CurrentmonthYear = CurrentMonth + "-" + CurrentYear;
+
+    string cm = currentDateTime.ToString("MM"), cy = currentDateTime.ToString("yyyy"), memoNo = "";
+    var findTransNo = (from m in db.TmsExpenseDbSet
+                       where m.COMPID == LoggedCompId && m.TRANSMY == CurrentmonthYear
+                       select m).ToList();
+    if (findTransNo.Count == 0)
+    {
+        memoNo = cy + cm + "0001";
+    }
+    else
+    {
+        Int64 max_TransNO = Convert.ToInt64((from m in db.TmsExpenseDbSet where m.COMPID == LoggedCompId && m.TRANSMY == CurrentmonthYear select m.TRANSNO).Max());
+        Int64 R = Convert.ToInt64(cy + cm + "9999");
+        if (max_TransNO <= R)
+        {
+            memoNo = Convert.ToString(max_TransNO + 1);
+        }
+        else
+        {
+            memoNo = "Not access!!!";
+        }
+    }
+
+
+    List<SelectListItem> listofCostpoolName = new List<SelectListItem>();
+    var findCostpoolName = (from m in db.GlCostPoolDbSet where m.COMPID == LoggedCompId select new { m.COSTPID, m.COSTPNM }).ToList();
+    foreach (var item in findCostpoolName)
+    {
+        listofCostpoolName.Add(new SelectListItem { Text = item.COSTPNM.ToString(), Value = Convert.ToString(item.COSTPID) });
+    }
+}
+
+<link href="~/Content/Angular-File/ng-grid.css" rel="stylesheet" />
+
+<link href="~/Content/bootstrap_datepicker_css/datepicker.css" rel="stylesheet" />
+<link href="~/Content/bootstrap_datepicker_css/datepicker3.css" rel="stylesheet" />
+
+<script src="~/Scripts/bootstrap-datepicker.js"></script>
+
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    <div id="contentHeaderBox">
+        <h1 style="padding-left: 16px">Expense - Trip Create</h1>
+        <div class="btn-group pull-right" id="editOption">
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" aria-expanded="false">
+                <i class="fa fa-cog"></i>
+            </button>
+            <ul class="dropdown-menu pull-right" style="" role="menu">
+                <li>
+                    <a href="@Url.Action("Update", "TmsExpense")"><i class="fa fa-file-text"></i> Update</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <br>
+    <div class="col-md-12">
+        <div class="form-group">
+            <div ng-app="TmsExpenseApp" data-ng-controller="ApiTmsExpenseController">
+
+                <div class="row">
+                    <form name="" data-ng-show="" @*style="width:600px;margin:0px auto;"*@>
+                        @Html.HiddenFor(model => model.COMPID, new { id = "txtcompid", style = "width:3em;", @Value = LoggedCompId })
+                        @Html.HiddenFor(model => model.INSUSERID, new { id = "txtInsertUserid", style = "width:3em;", @Value = loggedUserID })
+                        @Html.HiddenFor(model => model.Insert, new { id = "txt_Insertid", style = "width:3em;", @Value = createStatus })
+                        @Html.HiddenFor(model => model.Update, new { id = "txt_Updateid", style = "width:3em;", @Value = updateStatus })
+                        @Html.HiddenFor(model => model.Delete, new { id = "txt_Deleteid", style = "width:3em;", @Value = deleteStatus })
+                        @Html.HiddenFor(model => model.INSLTUDE, new { id = "latlon" })
+                        <input id="lat" type="hidden" />
+                        <input id="lon" type="hidden" />
+
+
+                        <div class="col-md-2">
+                            @Html.Label("name", "Expense Date", htmlAttributes: new { @class = "control-label" })
+                        </div>
+                        <div class="col-md-2">
+                            @Html.TextBoxFor(model => model.TRANSDT, htmlAttributes: new {id = "txt_transDt", @class = "form-control", @Value = currentDateTime.ToString("dd-MMM-yyyy"), @autofocus = "true"})
+                            @Html.HiddenFor(model => model.TRANSMY, new {id = "txt_transMonthYear", @Value = currentDateTime.ToString("MMM-yy").ToUpper()})
+                        </div>
+                        <div class="col-md-2"></div>
+                        <div class="col-md-2" style="text-align: right">
+                            @Html.Label("name", "Invoice No", htmlAttributes: new { @class = "control-label " })
+                        </div>
+                        <div class="col-md-2">
+                            @Html.TextBoxFor(model => model.TRANSNO, htmlAttributes: new {id = "txt_transNo", @class = "form-control", @readonly = "readonly", @Value = memoNo })
+                        </div>
+                        <div class="col-md-2">
+                            <input type="submit" value="Submit" class="btn btn-primary" id="btnSubmit" data-ng-click="submit($event)"/>
+                            <input type="submit" value="Complete" name="command" class="btn btn-primary" id="btnComplete"/>
+                        </div>
+                       
+                    </form>
+                </div>
+                <br />
+                <div class="row">
+                    <div class="col-md-2">
+                        @Html.Label("name", "Vehicle No", htmlAttributes: new { @class = "control-label" })
+                    </div>
+                    <div class="col-md-4">
+                        @*<input type="text" class="form-control input-sm" id="txt_CostpoolName" readonly="readonly"/>*@
+                        @Html.DropDownListFor(model => model.COSTPID, listofCostpoolName,"-Select-", new {id = "txt_Costpid", @class = "form-control", })
+                    </div>
+                    <div class="col-md-2" style="text-align: right">
+                        @Html.Label("name", "Trip No", htmlAttributes: new { @class = "control-label " })
+                    </div>
+                    <div class="col-md-2">
+                        @Html.DropDownListFor(model => model.TRIPNO, new SelectList(string.Empty, "Value", "Text"), "- Select -", htmlAttributes: new {id = "txt_tripNo", @class = "form-control",})
+                    </div>
+                    <div class="col-md-2">
+                        <input type="submit" value="Print" name="command" class="btn btn-primary" id="btnPrint" formtarget="_blank"/>
+                    </div>
+                </div>
+                <br />
+
+                <div class="row" id="gridlevel">
+                    @{
+                        List<SelectListItem> listofAcoountHead = new List<SelectListItem>();
+                        Int64 headCD = Convert.ToInt64(LoggedCompId + "401");
+                        var find_Accounthead = (from n in db.GlAcchartDbSet where n.COMPID == LoggedCompId && n.HEADCD==headCD select new { n.ACCOUNTCD,n.ACCOUNTNM }).ToList();
+                        foreach (var item in find_Accounthead)
+                        {
+                            listofAcoountHead.Add(new SelectListItem { Text = item.ACCOUNTNM.ToString(), Value = Convert.ToString(item.ACCOUNTCD) });
+                        }
+                   }
+                    <div class="col-md-12">
+                        <div class="panel panel-primary">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <tr>
+                                        <th style="width: 45%">Expense Head Particulars</th>
+                                        <th style="width: 20%">Amount</th>
+                                        <th style="width: 25%">Remarks</th>
+                                        <th style="width: 10%"></th>
+                                    </tr>
+                                    <tr>
+                                        <td style="width: 45%">
+                                            @Html.DropDownListFor(model => model.DEBITCD, listofAcoountHead, "- Select -", htmlAttributes: new {id = "txtDebitCD", @class = "form-control", @data_ng_model = "newChild.DEBITCD" })
+                                        </td>
+                                        <td style="width: 20%">
+                                            @Html.TextBoxFor(model => model.AMOUNT,  htmlAttributes: new {id = "txtAmount", @class = "form-control", @data_ng_model = "newChild.AMOUNT", @type="number",@step="any", @min = "0", @max = "999999999999999" })
+                                        </td>
+                                        <td style="width: 25%">
+                                            @Html.TextBoxFor(model => model.REMARKS, htmlAttributes: new { id = "txtRemarks", @class = "form-control", @data_ng_model = "newChild.REMARKS", maxlength = "95" })
+                                        </td>
+                                        <td style="width: 15%" id="insertbtn"><input type="submit" value="Insert" data-ng-click="addrow($event)" class="btn btn-primary" /></td>
+                                    </tr>
+                                    <tr data-ng-repeat="testitem in expenseData">
+                                        <td hidden><strong data-ng-hide="testitem.editMode">{{ testitem.ID }}</strong></td>
+                                        <td hidden><p data-ng-hide="testitem.editMode">{{ testitem.COMPID }}</p></td>
+                                        <td hidden><p data-ng-hide="testitem.editMode">{{ testitem.TRANSDT  }}</p></td>
+                                        <td hidden><p data-ng-hide="testitem.editMode">{{ testitem.TRANSMY }}</p></td>
+                                        <td hidden><p data-ng-hide="testitem.editMode">{{ testitem.TRANSNO }}</p></td>
+                                        <td hidden><p data-ng-hide="testitem.editMode">{{ testitem.TRANSSL }}</p></td>
+                                        <td hidden><p data-ng-hide="testitem.editMode">{{ testitem.TRIPNO }}</p></td>
+                                        <td hidden><p data-ng-hide="testitem.editMode">{{ testitem.COSTPID }}</p></td>
+                                        <td style="width: 20%">
+                                            <p data-ng-hide="testitem.editMode">{{ testitem.AccountHeadName }}</p>
+                                            <input class="form-control input-sm" data-ng-show="testitem.editMode" type="text" data-ng-model="testitem.AccountHeadName" id="gridAccountHeadName" readonly="readonly" />
+                                        </td>
+                                        <td style="width: 10%">
+                                            <p data-ng-hide="testitem.editMode">{{ testitem.AMOUNT }}</p>
+                                            <input class="form-control input-sm" data-ng-show="testitem.editMode" type="number" data-ng-model="testitem.AMOUNT" id="gridAmount" step="any" maxlength="15" />
+                                        </td>
+                                        <td style="width: 17%">
+                                            <p data-ng-hide="testitem.editMode">{{ testitem.REMARKS }}</p>
+                                            <input class="form-control input-sm" data-ng-show="testitem.editMode" type="text" data-ng-model="testitem.REMARKS" id="gridRemarksID" maxlength="90" />
+                                        </td>
+                                        <td style="width: 15%">
+                                            <p data-ng-hide="testitem.editMode"><a data-ng-click="toggleEdit(testitem)" href="javascript:;">Edit</a> | <a data-ng-click="deleteItem(testitem)" href="javascript:;">Delete</a></p>
+                                            <p data-ng-show="testitem.editMode"><a data-ng-click="update(testitem)" href="javascript:;">Save</a> | <a data-ng-click="toggleEdit_Cancel(testitem)" href="javascript:;">Cancel</a></p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    @*<div class="col-md-1">
+                        </div>*@
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+    //Latitute & longitude
+    <script src="http://maps.google.com/maps/api/js?sensor=false"></script>
+
+        <script language="javascript" type="text/javascript">
+            $(function () {
+                navigator.geolocation.getCurrentPosition(showPosition);
+                //navigator.geolocation.getCurrentPosition(showPosition, positionError);
+
+                function showPosition(position) {
+                    var coordinates = position.coords;
+                    $("#lat").val(coordinates.latitude);
+                    $("#lon").val(coordinates.longitude);
+
+                    $("#latlon").val(
+                        $("#lat").val() + "," + $("#lon").val()
+                    );
+                }
+            });
+        </script>
+
+
+        <script type="text/javascript">
+
+            $(document).ready(function () {
+
+                $('#txt_transDt').datepicker({
+                    format: "dd-M-yyyy",
+                    autoclose: true,
+                    todayHighlight: true,
+                    showOnFocus: true,
+                }).on('show', function (e) {
+                    if (e.date) {
+                        $(this).data('stickyDate', e.date);
+                    } else {
+                        $(this).data('stickyDate', null);
+                    }
+                }).on('hide', function (e) {
+                    var stickyDate = $(this).data('stickyDate');
+
+                    if (!e.date && stickyDate) {
+                        $(this).datepicker('setDate', stickyDate);
+                        $(this).data('stickyDate', null);
+                    }
+                    document.getElementById("txt_tripNo").focus();
+                });
+
+
+                $('#txt_transDt').change(function () {
+                    var dateText = $("#txt_transDt").val();
+                    var compid = $('#txtcompid').val();
+
+                    var txt_transMonthYear = document.getElementById('txt_transMonthYear');
+                    var txt_transNo = document.getElementById('txt_transNo');
+                    $.getJSON(
+                        '/TmsExpense/GetMonthYear', { "DateText": dateText, "Compid": compid },
+                        function (result) {
+                            txt_transMonthYear.value = result.myear;
+                            txt_transNo.value = result.MemoNo;
+                        });
+                    $("#txt_transMonthYear").val("");
+                    $("#txt_transNo").val("");
+                });
+
+
+
+
+                //$('#txt_tripNo').change(function () {
+                //    var changedText = $("#txt_tripNo").val();
+                //    var compid = $('#txtcompid').val();
+
+                //    var txt_CostpoolName = document.getElementById('txt_CostpoolName');
+                //    var txt_Costpid = document.getElementById('txt_Costpid');
+
+                //    $.getJSON(
+                //        '/TmsExpense/GetCostPoolName', { "ChangedText": changedText, "Compid": compid},
+                //        function (result) {
+                //            txt_CostpoolName.value = result.CPname;
+                //            txt_Costpid.value = result.Cpid;
+                //        });
+                //    $("#txt_CostpoolName").val("");
+                //    $("#txt_Costpid").val("");
+
+                //});
+
+
+                $('#gridlevel').hide();
+                $('#btnComplete').hide();
+                $('#btnPrint').hide();
+                $('#btnSubmit').click(function () {
+                    var date = $("#txt_transDt").val();
+                    var myear = $("#txt_transMonthYear").val();
+                    var memoNo = $("#txt_transNo").val();
+                    var tripno = $('#txt_tripNo').val();
+                    var cpid = $('#txt_Costpid').val();
+                    if (date != "" && myear != "" && memoNo != "" && memoNo != 0 && tripno != "" && tripno != 0 && cpid != "" && cpid != 0 && tripno != "select") {
+                        $('#gridlevel').show();
+                        $('#btnSubmit').hide();
+                        $('#txt_transDt').attr('readonly', true);
+                        $('#txt_tripNo').attr('readonly', true);
+                        $('#txt_Costpid').attr('readonly', true);
+                        $('#btnComplete').show();
+                        $('#btnPrint').show();
+                    } else {
+                        $('#btnSubmit').show();
+                        $('#gridlevel').hide();
+                        $('#btnComplete').hide();
+                        $('#btnPrint').hide();
+                    }
+                  
+                });
+
+
+
+                $('#txt_Costpid').change(function () {
+                    var changedText = $("#txt_Costpid").val();
+                    var cpid = $('#txtcompid').val();
+                    $("#txt_tripNo").val(" ");
+                    $.ajax
+                    ({
+                        url: '@Url.Action("TripNoload", "TmsExpense")',
+                        type: 'post',
+                        dataType: "json",
+                        data: { ChangedText: changedText, Cid: cpid },
+                        success: function (data) {
+                            $("#txt_tripNo").empty();
+                            $("#txt_tripNo").append('<option value="'
+                                + "select" + '">'
+                                + "select" + '</option>');
+
+
+                            $.each(data, function (i, memo) {
+
+                                $("#txt_tripNo").append('<option value="'
+                                    + memo.Value + '">'
+                                    + memo.Text + '</option>');
+
+                            });
+                        }
+                    });
+                });
+
+
+                $('#btnPrint').click(function () {
+                    setTimeout(function () { window.location.reload(); }, 100);
+                });
+
+
+
+
+                //$('#CItemNameid').change(function () {
+                //    var regid = $('#txt_REGNID option:selected').val();
+                //    if (regid == null || regid == "" || regid == "select") {
+                //        $('#insertbtn').hide();
+                //    } else {
+                //        $('#insertbtn').show();
+                //    }
+
+                //});
+                //$('#RoomNoID').change(function () {
+                //    document.getElementById("remarksID").focus();
+                //});
+
+
+            });
+        </script>
+}
+
+
+@*<link href="~/Content/themes/base/jquery-ui.css" rel="stylesheet" />
+    <script src="~/Scripts/jquery-1.9.1.min.js"></script>
+    <script src="~/Scripts/jquery-ui-1.10.4.min.js"></script>*@
+
+
+<script src="~/Scripts/angularjs/1.0.5/angular.js"></script>
+<script src="~/Scripts/TmsExpense/index.js"></script>
+<script src="~/Scripts/angularjs/ui-bootstrap-tpls-0.4.0.js"></script>

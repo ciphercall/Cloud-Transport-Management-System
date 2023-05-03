@@ -1,0 +1,297 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using System.Security.Cryptography.X509Certificates
+@using System.Text.RegularExpressions
+@using Cloud_Transport.DataAccess
+@using Cloud_Transport.Models
+
+@{
+    ViewBag.Title = "GetVehicleTripOp_PL";
+    Layout = null;
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+
+    CnfDbContext db = new CnfDbContext();
+
+
+    Int64 companyId = Convert.ToInt64(Model.TmsTripmst.COMPID);
+    String MonthYear = Convert.ToString(Model.TmsTrip.TRIPMY);
+
+
+    string companyName = "", address = "", contactNo = "", address2 = "";
+    var re = from m in db.AslCompanyDbSet where m.COMPID == companyId select new { m.COMPNM, m.ADDRESS, m.CONTACTNO };
+    foreach (var n in re)
+    {
+        companyName = n.COMPNM;
+        address = n.ADDRESS;
+        contactNo = n.CONTACTNO;
+    }
+    var compNm = companyName;
+    var Address = address;
+    var contactno = contactNo;
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+
+</head>
+<body style=" background-color:#fafafa;">
+    <div style="width: 960px; margin: 0px auto; border: 1px solid #d3d3d3; border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); background: none repeat scroll 0 0 white;">
+        <table id="mainTable" border="0" width="100%">
+            <thead>
+                <tr>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                </tr>
+                <tr style="background-color: #00689b">
+                    <td colspan="13">
+                        <h3 style="color: white;padding:4px">@compNm</h3>
+                        <p style="color:white;padding-left:4px">@Address<br /> @address2</p>
+                    </td>
+                    <td colspan="7" style="color: white;padding:8px" align="right">
+                        Powered By<br />Alchemy Software
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="13" align="left" style="padding: 4px; font-weight: bold">VEHICLE & TRIP WISE OPERATING PROFIT/LOSS STATEMENT</td>
+                    <td align="right" colspan="7" style="padding: 8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+                </tr>
+                <tr style="outline: thin solid">
+                    <td colspan="2" align="left" style="padding: 4px">Month-Year</td>
+                    <td colspan="10" style="font-weight: bold">: @MonthYear</td>
+                </tr>
+                @*<tr style="background-color: #00689b; outline: thin solid">
+                        <td colspan="2" style="color: white; padding: 4px" align="center">Date</td>
+                        <td colspan="2" style="color: white; padding: 4px" align="center">Trip No</td>
+                        <td colspan="3" style="color: white; padding: 4px" align="center">From</td>
+                        <td colspan="3" style="color: white; padding: 4px" align="center">To</td>
+                        <td colspan="4" style="color: white; padding: 4px" align="center">Transport Name</td>
+                        <td colspan="3" style="color: white; padding: 4px" align="center">Fuel</td>
+                        <td colspan="3" style="color: white; padding: 4px" align="center">Mobil</td>
+                    </tr>*@
+
+            </thead>
+            <tbody>
+                @{
+                    Decimal grandTotal_FareAmount = 0, grandTotal_ExpenseAmount = 0, grandTotal_Profit_Loss = 0;
+                    var MasterData = (from m in db.TmsTripmstDbSet where m.COMPID == companyId && m.TRIPMY == MonthYear select new { m.COSTPID }).Distinct().ToList();
+
+
+                    foreach (var masterdataList in MasterData)
+                    {
+                        System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["CnfDbContext"].ToString());
+                        string query = string.Format(
+                            @"SELECT COSTPNM, RTRIPNO, TRIPDT, ISNULL(FARE,0) FARE, SUM(ISNULL(DEBITAMT,0)) AMTEXP, ISNULL(FARE,0)-SUM(ISNULL(DEBITAMT,0)) AMTPL  FROM (
+SELECT A.COSTPID, COSTPNM, A.RTRIPNO, C.TRIPDT, SUM(ISNULL(AMTTOT,0)) FARE FROM TMS_TRIP A INNER JOIN GL_COSTPOOL B ON A.COSTPID = B.COSTPID AND A.COMPID=B.COMPID
+INNER JOIN TMS_TRIPMST C ON A.COSTPID = C.COSTPID AND A.RTRIPNO = C.RTRIPNO AND A.TRIPMY = C.TRIPMY AND A.COMPID=C.COMPID
+WHERE  A.TRIPMY = '{2}' AND A.COMPID='{0}' AND A.COSTPID='{1}' GROUP BY A.COSTPID, COSTPNM, A.RTRIPNO, C.TRIPDT
+) A LEFT OUTER JOIN GL_MASTER C ON A.COSTPID = C.COSTPID AND SUBSTRING(CAST(C.TRIPNO AS NVARCHAR),1,6)= A.RTRIPNO
+AND SUBSTRING(CAST(C.DEBITCD AS NVARCHAR),4,1)='4' AND TABLEID<>'TMS_TRIP' AND C.COMPID='{0}'  AND C.COSTPID='{1}'
+GROUP BY COSTPNM, RTRIPNO, TRIPDT, ISNULL(FARE,0)",
+                            companyId, masterdataList.COSTPID, MonthYear);
+                        System.Data.SqlClient.SqlCommand cmd = new System.Data.SqlClient.SqlCommand(query, conn);
+                        conn.Open();
+                        SqlDataAdapter da = new SqlDataAdapter(cmd);
+                        DataTable ds = new DataTable();
+                        da.Fill(ds);
+
+
+                        Decimal groupWiseFareAmount = 0, groupWiseExpenseAmount = 0, groupWiseProfit_Loss = 0;
+                        foreach (DataRow row in ds.Rows)
+                        {
+                            string vehicleNo = "";
+                            var findVehicleNo = (from m in db.GlCostPoolDbSet where m.COMPID == companyId && m.COSTPID == masterdataList.COSTPID select new { m.COSTPID, m.COSTPNM }).ToList();
+                            foreach (var getVehicleNo in findVehicleNo)
+                            {
+                                vehicleNo = getVehicleNo.COSTPNM;
+                                break;
+                            }
+                            <tr>
+                                <td><br /></td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" align="left" style="padding: 4px">Vehicle No </td>
+                                <td colspan="18" align="left" style="font-weight: bold; padding-left: 4px;">: @vehicleNo</td>
+                            </tr>
+                            break;
+                        }
+
+
+                        foreach (DataRow row in ds.Rows)
+                        {
+                            <tr style="background-color: #00689b; outline: thin solid">
+                                <td colspan="2" style="font-size: small;color: white; padding: 4px" align="center">Round-Trip</td>
+                                <td colspan="2" style="font-size: small;color: white; padding: 4px" align="center">Date</td>
+                                <td colspan="4" style="font-size: small;color: white; padding: 4px" align="center">Fare Amount</td>
+                                <td colspan="4" style="font-size: small;color: white; padding: 4px" align="center">Expense Amount</td>
+                                <td colspan="4" style="font-size: small;color: white; padding: 4px" align="center">Profit/Loss</td>
+                                <td colspan="4" style="font-size: small;color: white; padding: 4px" align="center">Remarks</td>
+                            </tr>
+                            break;
+                        }
+
+
+                        Decimal FareAmount = 0, ExpenseAMount = 0, Profit_Loss = 0;
+                        Int64 Round_Trip = 0;
+                        String Remarks = "", Date = "";
+                        foreach (DataRow row in ds.Rows)
+                        {
+                            Date = row["TRIPDT"].ToString();
+                            DateTime date1 = Convert.ToDateTime(Date);
+                            Date = date1.ToString("dd-MMM-yyyy");
+
+                            Round_Trip = Convert.ToInt64(row["RTRIPNO"].ToString());
+                            var findRemarks = (from m in db.TmsTripmstDbSet where m.COMPID == companyId && m.TRIPMY == MonthYear && m.COSTPID == masterdataList.COSTPID && m.RTRIPNO == Round_Trip select new { m.REMARKS }).ToList();
+                            foreach (var get in findRemarks)
+                            {
+                                Remarks = get.REMARKS;
+                            }
+
+                            FareAmount = Convert.ToDecimal(row["FARE"].ToString());
+                            ExpenseAMount = Convert.ToDecimal(row["AMTEXP"].ToString());
+                            Profit_Loss = Convert.ToDecimal(row["AMTPL"].ToString());
+
+                            string S_FareAmount = Convert.ToString(FareAmount);
+                            S_FareAmount = CommainAmount.AmountwithComma(S_FareAmount);
+                            string S_ExpenseAMount = Convert.ToString(ExpenseAMount);
+                            S_ExpenseAMount = CommainAmount.AmountwithComma(S_ExpenseAMount);
+                            string S_Profit_Loss = Convert.ToString(Profit_Loss);
+                            S_Profit_Loss = CommainAmount.AmountwithComma(S_Profit_Loss);
+
+                            <tr style="outline: thin solid #807575">
+                                <td align="center" colspan="2" style="padding-left: 4px; font-size: small">
+                                    @Round_Trip
+                                </td>
+                                <td align="center" colspan="2" style="padding-left: 4px; font-size: small">
+                                    @Date
+                                </td>
+                                <td align="right" colspan="4" style="padding-left: 4px; font-size: small">
+                                    @S_FareAmount
+                                </td>
+                                <td align="right" colspan="4" style="padding-left: 4px; font-size: small">
+                                    @S_ExpenseAMount
+                                </td>
+                                <td align="right" colspan="4" style="padding-left: 4px; font-size: small">
+                                    @S_Profit_Loss
+                                </td>
+                                <td align="left" colspan="4" style="padding-left: 4px; font-size: small">
+                                    @Remarks
+                                </td>
+                            </tr>
+
+                            groupWiseFareAmount = Convert.ToDecimal(groupWiseFareAmount + FareAmount);
+                            groupWiseExpenseAmount = Convert.ToDecimal(groupWiseExpenseAmount + ExpenseAMount);
+                            groupWiseProfit_Loss = Convert.ToDecimal(groupWiseProfit_Loss + Profit_Loss);
+
+                            grandTotal_FareAmount = Convert.ToDecimal(FareAmount + grandTotal_FareAmount);
+                            grandTotal_ExpenseAmount = Convert.ToDecimal(ExpenseAMount + grandTotal_ExpenseAmount);
+                            grandTotal_Profit_Loss = Convert.ToDecimal(Profit_Loss + grandTotal_Profit_Loss);
+                        }
+
+                        foreach (DataRow row in ds.Rows)
+                        {
+                            string S_groupWiseFareAmount = Convert.ToString(groupWiseFareAmount);
+                            S_groupWiseFareAmount = CommainAmount.AmountwithComma(S_groupWiseFareAmount);
+                            string S_groupWiseExpenseAmount = Convert.ToString(groupWiseExpenseAmount);
+                            S_groupWiseExpenseAmount = CommainAmount.AmountwithComma(S_groupWiseExpenseAmount);
+                            string S_groupWiseProfit_Loss = Convert.ToString(groupWiseProfit_Loss);
+                            S_groupWiseProfit_Loss = CommainAmount.AmountwithComma(S_groupWiseProfit_Loss);
+                            <tr>
+                                <td align="right" colspan="4" style="padding-left: 4px;font-size: small">
+                                    Total:
+                                </td>
+                                <td align="right" colspan="4" style="padding-left: 4px;font-size: small">
+                                    @S_groupWiseFareAmount
+                                </td>
+                                <td align="right" colspan="4" style="padding-left: 4px; font-size: small">
+                                    @S_groupWiseExpenseAmount
+                                </td>
+                                <td align="right" colspan="4" style="padding-left: 4px;font-size: small">
+                                    @S_groupWiseProfit_Loss
+                                </td>
+                                <td align="right" colspan="4" style="padding-left: 4px; font-size: small"></td>
+                            </tr>
+                            break;
+                        }
+
+                        conn.Close();
+                    }
+                    <tr>
+                        <td><br /></td>
+                    </tr>
+                    string S_grandTotal_FareAmount = Convert.ToString(grandTotal_FareAmount);
+                    S_grandTotal_FareAmount = CommainAmount.AmountwithComma(S_grandTotal_FareAmount);
+                    string S_grandTotal_ExpenseAmount = Convert.ToString(grandTotal_ExpenseAmount);
+                    S_grandTotal_ExpenseAmount = CommainAmount.AmountwithComma(S_grandTotal_ExpenseAmount);
+                    string S_grandTotal_Profit_Loss = Convert.ToString(grandTotal_Profit_Loss);
+                    S_grandTotal_Profit_Loss = CommainAmount.AmountwithComma(S_grandTotal_Profit_Loss);
+                    <tr style="outline: thin solid #807575">
+                        <td align="right" colspan="4" style="padding-left: 4px; font-size: small;font-weight: bold;">
+                            Grand Total:
+                        </td>
+                        <td align="right" colspan="4" style="padding-left: 4px;font-size: small;font-weight: bold;">
+                            @S_grandTotal_FareAmount
+                        </td>
+                        <td align="right" colspan="4" style="padding-left: 4px; font-size: small;font-weight: bold;">
+                            @S_grandTotal_ExpenseAmount
+                        </td>
+                        <td align="right" colspan="4" style="padding-left: 4px;font-size: small;font-weight: bold;">
+                            @S_grandTotal_Profit_Loss
+                        </td>
+                        <td align="right" colspan="4" style="padding-left: 4px; font-size: small;font-weight: bold;"></td>
+                    </tr>
+                }
+
+                <tr>
+                    <td><br /></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>
+

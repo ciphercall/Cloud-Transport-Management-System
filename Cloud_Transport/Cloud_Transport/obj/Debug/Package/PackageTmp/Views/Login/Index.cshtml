@@ -1,0 +1,559 @@
+﻿@model Cloud_Transport.Models.ASL.LoginModel
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Alchemy Software | TMS</title>
+
+    <!-- stylesheets -->
+    <link href="~/Content/homeDesign/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/Content/homeDesign/css/font-awesome.min.css" rel="stylesheet" />
+    <link href="~/Content/homeDesign/owl-carousel/owl.carousel.css" rel="stylesheet" />
+    <link href="~/Content/homeDesign/owl-carousel/owl.theme.css" rel="stylesheet" />
+    <link href="~/Content/homeDesign/css/style.css" rel="stylesheet" />
+    <link href="~/Content/AdminPanel/css/loginScreen.css" rel="stylesheet" />
+    @*<link href="~/Content/bootstrap-3.2.0-dist/css/bootstrap.css" rel="stylesheet" />*@
+
+    <link href="~/Content/aslLogin.css" rel="stylesheet" />
+    @*<script src="~/Content/bootstrap-3.2.0-dist/js/jquery-2.1.0.min.js"></script>*@
+    <script src="~/Content/bootstrap-3.2.0-dist/js/bootstrap.js"></script>
+    @*font-awesome "Glyphicons"*@
+    @*<link href="~/Content/font-awesome-4.2.0/css/font-awesome.css" rel="stylesheet" />*@
+    <!-- end stylesheets -->
+    <!-- js libray -->
+    <script src="~/Content/homeDesign/js/jquery-2.1.3.js"></script>
+</head>
+<body>
+    <!--header start-->
+    <header class="animated slideInDown">
+        <section id="header">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="col-md-3" id="logo">
+                            <!-- <a href="index.php"><img src="images/logo.png" alt="rs" /></a> -->
+                            <a href="../Home/"><h1>Cloud Transport</h1></a>
+                        </div>
+                        <!--left menu-->
+                        <div class="col-md-5 col-xs-12 animated fadeIn" id="leftMenu">
+                            <ul>
+                                <li class="active"><a href="../Home/">Home</a></li>
+                                <li>@Html.ActionLink("About", "About", "Home")</li>
+                                <li>@Html.ActionLink("Faq", "Faq", "Home")</li>
+                                <li>@Html.ActionLink("Contact", "Contact", "Home")</li>
+                                <!--<li> <a href="#" style="padding: 13px;"><img src="images/facebook.png" alt="facebook"></a></li>-->
+
+                            </ul>
+                        </div>
+                        <!--end left menu-->
+                        <!--menu right-->
+                        <div class="col-md-4 col-xs-10 pull-right text-left" id="rightMenu">
+                            <ul>
+
+                                <li><a href="#" id="login" class=""> Login</a></li>
+                                <li>
+                                    <a href="https://www.facebook.com/AlchemySoftware" target="_blank"> <i class="fa fa-facebook"></i></a>
+                                    <a href="https://twitter.com/alchemybd" target="_blank"> <i class="fa fa-twitter"></i></a>
+                                    <a href="https://plus.google.com/100639053145643474788" target="_blank"> <i class="fa fa-google-plus"></i></a>
+                                </li>
+                                <!-- <li>
+                                    <a href="#" class=""> <i class="fa fa-facebook"></i></a>
+                                    <a href="#" class=""> <i class="fa fa-twitter"></i></a>
+                                    <a href="#" class=""> <i class="fa fa-google-plus"></i></a>
+                                </li> -->
+                                <!-- <li><a href="contact.php" class="">Request for DEMO : +88 01988 844 987</a></li> -->
+                            </ul>
+                        </div>
+                        <!--end menu right-->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </header>
+    <!--header end-->
+    
+    <!--main slider start-->
+    <section id="slider" class="hidden-xs">
+        <div class="row" id="owl-rs">
+            <img class="animated fadeIn" src="~/Content/homeDesign/images/slider/slide-2.jpg" alt="slide-1" />
+            <img class="animated fadeIn" src="~/Content/homeDesign/images/slider/slide-3.jpg" alt="slide-1" />
+            <img class="animated fadeIn" src="~/Content/homeDesign/images/slider/slide-5.jpg" alt="slide-1" />
+
+
+        </div>
+        <div id="welcomeMsg">
+            <h2 class="">
+                CLOUD Transport
+            </h2>
+            <p class="animated slideInRight">
+                "Transport Management System"
+            </p>
+            <div id="demo" class="animated bounceInDown">
+                <h4><a href="../Home/Contact.cshtml" class="">Request for DEMO</a></h4>
+                <h3><i class="fa fa-phone fa 2x"></i> +88 01988 844 987 </h3>
+            </div>
+        </div>
+        <!--welcome message section-->
+        <!--end welcome message section-->
+        <!-- featured Apps banner -->
+        <!--<section id="featuredApp">-->
+        <!--    <div class="container">-->
+        <!--        <div class="row">-->
+        <!--            <div class="col-md-12">-->
+        <!--                <div class="col-md-12">-->
+        <!--                    <img src="images/banner.gif" alt="asl-rms-banner">-->
+        <!--                </div>-->
+        <!--            </div>-->
+        <!--        </div>-->
+        <!--    </div>-->
+        <!--</section>-->
+        <!-- end featured Apps banner -->
+    </section>
+    <!--end main slider-->
+    <!--info section-->
+    <section id="info">
+        <div class="container">
+            <div class="row">
+
+
+                <div class="col-md-6" id="features">
+                    <h2>Features</h2>
+                    <ul>
+                        <li><i class="fa fa-dot-circle-o"></i> Trip Details </li>
+                        <li><i class="fa fa-dot-circle-o"></i> Trip Expenses </li>
+                        <li><i class="fa fa-dot-circle-o"></i> Vehicle - Trip Expenses</li>
+                        <li><i class="fa fa-dot-circle-o"></i> Vehicle - Other Expenses</li>
+                        <li><i class="fa fa-dot-circle-o"></i> Trip Summary</li>
+                        <li><i class="fa fa-dot-circle-o"></i> Operating P/L - Trip</li>
+                        <li><i class="fa fa-dot-circle-o"></i> Operating P/L - Vehicle</li>
+                        <li><i class="fa fa-dot-circle-o"></i> Trip History - Party</li>
+                        <li><i class="fa fa-dot-circle-o"></i> Fuel Consumption</li>
+                        <li><i class="fa fa-dot-circle-o"></i> Total Financial Management</li>
+
+                    </ul>
+                    <a id="features" href="../Home/About.cshtml" class="btn">Read More</a>
+                </div>
+                <div class="col-md-6" id="benefits">
+                    <h2>Benefits</h2>
+                    <ul>
+                        <li><i class="fa fa-dot-circle-o"></i> Save time</li>
+                        <li><i class="fa fa-dot-circle-o"></i> Instant information</li>
+                        <li><i class="fa fa-dot-circle-o"></i> Auto Up-gradation</li>
+                        <li><i class="fa fa-dot-circle-o"></i> Unlimited space</li>
+                        <li><i class="fa fa-dot-circle-o"></i> Work anytime, from any where</li>
+                        <li><i class="fa fa-dot-circle-o"></i> Zero Configuration</li>
+                        <li><i class="fa fa-dot-circle-o"></i> Flexibility</li>
+                        <li><i class="fa fa-dot-circle-o"></i> Training facilites</li>
+                        <li><i class="fa fa-dot-circle-o"></i> Hide show data for security</li>
+                        <li><i class="fa fa-dot-circle-o"></i> Up gradation,maintenance facility</li>
+                    </ul>
+                    <a id="benifits" href="../Home/About.cshtml" class="btn">Read More</a>
+                </div>
+
+
+                <!-- </div> -->
+                <!-- <div class="col-md-2 col-xs-12 pull-right">-->
+                <!-- <h2>Clients</h2>-->
+                <!-- <div class="featuresImg">-->
+                <!-- <ul>-->
+                <!-- <li data-toggle="tooltip" data-placement="top" title="HMS Agent Association"><a-->
+                <!-- href="#"><img src="images/clients/img6.png" alt="asl_clients"></a></li>-->
+                <!-- <li data-toggle="tooltip" data-placement="top" title="Federal Freight System Limited"><a-->
+                <!-- href="#"><img src="images/clients/img8.png" alt="asl_clients"></a></li>-->
+                <!-- <li data-toggle="tooltip" data-placement="top" title="Contrans (Pvt) Limited"><a-->
+                <!-- href="#"><img src="images/clients/img82.png" alt="asl_clients"></a></li>-->
+                <!-- <li data-toggle="tooltip" data-placement="top" title="Jane Trading Corporation Ltd."><a-->
+                <!-- href="#"><img src="images/clients/img100.jpg" alt="asl_clients"></a></li>-->
+                <!-- <li data-toggle="tooltip" data-placement="top" title="Lamia Trading / BD Builders"><a-->
+                <!-- href="#"><img src="images/clients/img36.png" alt="asl_clients"></a></li>-->
+                <!-- <li data-toggle="tooltip" data-placement="top" title="Shamol Trading Corporation"><a-->
+                <!-- href="#"><img src="images/clients/img99.jpg" alt="asl_clients"></a></li>-->
+                <!-- <li data-toggle="tooltip" data-placement="top" title="Rana Enterprise"><a href="#"><img-->
+                <!-- src="images/clients/img101.bmp" alt="asl_clients"></a></li>-->
+                <!-- <li data-toggle="tooltip" data-placement="top" title="Continental Shipping"><a href="#"><img-->
+                <!-- src="images/clients/img71.png" alt="asl_clients"></a></li>-->
+                <!---->
+                <!-- <li data-toggle="tooltip" data-placement="top" title="S.M Chawdhury"><a href="#"><img-->
+                <!-- src="images/clients/fmc.png" alt="asl_clients"></a></li>-->
+                <!-- <li data-toggle="tooltip" data-placement="top" title="Sorif Enterprise"><a href="#"><img-->
+                <!-- src="images/clients/sorif_enterprise.png" alt="asl_clients"></a></li>-->
+                <!---->
+                <!---->
+                <!-- </ul>-->
+                <!-- </div>-->
+                <!-- </div>-->
+
+            </div>
+        </div>
+        <br />
+    </section>
+    <!--end info section-->
+    <hr>
+    <!-- clients section -->
+    <section id="clientsSlider">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="col-md-12" id="owl-clients">
+                        <img src="~/Content/homeDesign/images/clients/img1.png" alt="img1">
+                        <img src="~/Content/homeDesign/images/clients/img2.png" alt="img2">
+                        <img src="~/Content/homeDesign/images/clients/img3.png" alt="img3">
+                        <img src="~/Content/homeDesign/images/clients/img4.png" alt="img4">
+                        <img src="~/Content/homeDesign/images/clients/img5.png" alt="img5">
+                        <img src="~/Content/homeDesign/images/clients/img6.png" alt="img6">
+                        <img src="~/Content/homeDesign/images/clients/img7.png" alt="img7">
+                        <img src="~/Content/homeDesign/images/clients/img8.png" alt="img8">
+                        <img src="~/Content/homeDesign/images/clients/img9.png" alt="img9">
+                        <img src="~/Content/homeDesign/images/clients/img10.png" alt="img10">
+                        <img src="~/Content/homeDesign/images/clients/img11.png" alt="img11">
+                        <img src="~/Content/homeDesign/images/clients/img12.png" alt="img12">
+                        <img src="~/Content/homeDesign/images/clients/img13.png" alt="img13">
+                        <img src="~/Content/homeDesign/images/clients/img14.png" alt="img14">
+                        <img src="~/Content/homeDesign/images/clients/img15.png" alt="img15">
+                        <img src="~/Content/homeDesign/images/clients/img16.png" alt="img16">
+                        <img src="~/Content/homeDesign/images/clients/img17.png" alt="img17">
+                        <img src="~/Content/homeDesign/images/clients/img18.png" alt="img18">
+                        <img src="~/Content/homeDesign/images/clients/img19.png" alt="img19">
+                        <img src="~/Content/homeDesign/images/clients/img20.png" alt="img20">
+                        <img src="~/Content/homeDesign/images/clients/img21.png" alt="img21">
+                        <img src="~/Content/homeDesign/images/clients/img22.png" alt="img22">
+                        <img src="~/Content/homeDesign/images/clients/img23.png" alt="img23">
+                        <img src="~/Content/homeDesign/images/clients/img24.png" alt="img24">
+                        <img src="~/Content/homeDesign/images/clients/img25.png" alt="img25">
+                        <img src="~/Content/homeDesign/images/clients/img26.png" alt="img26">
+                        <img src="~/Content/homeDesign/images/clients/img27.png" alt="img27">
+
+                        <img src="~/Content/homeDesign/images/clients/img29.png" alt="img29">
+                        <img src="~/Content/homeDesign/images/clients/img30.png" alt="img30">
+                        <img src="~/Content/homeDesign/images/clients/img31.png" alt="img31">
+                        <img src="~/Content/homeDesign/images/clients/img32.png" alt="img32">
+                        <img src="~/Content/homeDesign/images/clients/img33.png" alt="img33">
+                        <img src="~/Content/homeDesign/images/clients/img34.png" alt="img34">
+                        <img src="~/Content/homeDesign/images/clients/img35.png" alt="img35">
+                        <img src="~/Content/homeDesign/images/clients/img36.png" alt="img36">
+                        <img src="~/Content/homeDesign/images/clients/img37.png" alt="img37">
+                        <img src="~/Content/homeDesign/images/clients/img38.png" alt="img38">
+                        <img src="~/Content/homeDesign/images/clients/img39.png" alt="img39">
+                        <img src="~/Content/homeDesign/images/clients/img40.png" alt="img40">
+                        <img src="~/Content/homeDesign/images/clients/img41.png" alt="img41">
+                        <img src="~/Content/homeDesign/images/clients/img42.png" alt="img42">
+                        <img src="~/Content/homeDesign/images/clients/img43.png" alt="img43">
+                        <img src="~/Content/homeDesign/images/clients/img44.png" alt="img44">
+                        <img src="~/Content/homeDesign/images/clients/img45.png" alt="img45">
+                        <img src="~/Content/homeDesign/images/clients/img46.png" alt="img46">
+                        <img src="~/Content/homeDesign/images/clients/img47.png" alt="img47">
+                        <img src="~/Content/homeDesign/images/clients/img48.png" alt="img48">
+                        <img src="~/Content/homeDesign/images/clients/img49.png" alt="img49">
+                        <img src="~/Content/homeDesign/images/clients/img50.png" alt="img50">
+                        <img src="~/Content/homeDesign/images/clients/img51.png" alt="img51">
+                        <img src="~/Content/homeDesign/images/clients/img52.png" alt="img52">
+                        <img src="~/Content/homeDesign/images/clients/img53.png" alt="img53">
+                        <img src="~/Content/homeDesign/images/clients/img54.png" alt="img54">
+                        <img src="~/Content/homeDesign/images/clients/img55.png" alt="img55">
+                        <img src="~/Content/homeDesign/images/clients/img56.png" alt="img56">
+                        <img src="~/Content/homeDesign/images/clients/img57.png" alt="img57">
+                        <img src="~/Content/homeDesign/images/clients/img58.png" alt="img58">
+                        <img src="~/Content/homeDesign/images/clients/img59.png" alt="img59">
+                        <img src="~/Content/homeDesign/images/clients/img60.png" alt="img60">
+                        <img src="~/Content/homeDesign/images/clients/img61.png" alt="img61">
+                        <img src="~/Content/homeDesign/images/clients/img62.png" alt="img62">
+                        <img src="~/Content/homeDesign/images/clients/img63.png" alt="img63">
+
+                        <img src="~/Content/homeDesign/images/clients/img65.png" alt="img65">
+                        <img src="~/Content/homeDesign/images/clients/img66.png" alt="img66">
+                        <img src="~/Content/homeDesign/images/clients/img67.png" alt="img67">
+                        <img src="~/Content/homeDesign/images/clients/img68.png" alt="img68">
+                        <img src="~/Content/homeDesign/images/clients/img69.png" alt="img69">
+                        <img src="~/Content/homeDesign/images/clients/img70.png" alt="img70">
+                        <img src="~/Content/homeDesign/images/clients/img71.png" alt="img71">
+                        <img src="~/Content/homeDesign/images/clients/img72.png" alt="img72">
+                        <img src="~/Content/homeDesign/images/clients/img73.png" alt="img73">
+                        <img src="~/Content/homeDesign/images/clients/img74.png" alt="img74">
+                        <img src="~/Content/homeDesign/images/clients/img75.png" alt="img75">
+                        <img src="~/Content/homeDesign/images/clients/img76.png" alt="img76">
+                        <img src="~/Content/homeDesign/images/clients/img77.png" alt="img77">
+                        <img src="~/Content/homeDesign/images/clients/img78.png" alt="img78">
+                        <img src="~/Content/homeDesign/images/clients/img79.png" alt="img79">
+                        <img src="~/Content/homeDesign/images/clients/img80.png" alt="img80">
+                        <img src="~/Content/homeDesign/images/clients/img81.png" alt="img81">
+                        <img src="~/Content/homeDesign/images/clients/img82.png" alt="img82">
+                        <img src="~/Content/homeDesign/images/clients/img83.png" alt="img83">
+                        <img src="~/Content/homeDesign/images/clients/img84.png" alt="img84">
+
+                        <img src="~/Content/homeDesign/images/clients/img86.png" alt="img86">
+                        <img src="~/Content/homeDesign/images/clients/img87.png" alt="img87">
+
+                        <img src="~/Content/homeDesign/images/clients/img89.png" alt="img89">
+                        <img src="~/Content/homeDesign/images/clients/img90.png" alt="img90">
+                        <img src="~/Content/homeDesign/images/clients/img91.png" alt="img91">
+                        <img src="~/Content/homeDesign/images/clients/img92.png" alt="img92">
+                        <img src="~/Content/homeDesign/images/clients/img93.png" alt="img93">
+                        <img src="~/Content/homeDesign/images/clients/img94.png" alt="img94">
+                        <img src="~/Content/homeDesign/images/clients/img95.png" alt="img95">
+                        <img src="~/Content/homeDesign/images/clients/img96.png" alt="img96">
+
+                        <img src="~/Content/homeDesign/images/clients/img98.png" alt="img98">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- end clients section -->
+    <br>
+    <!--Top footer section-->
+    <section id="topFooter">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="col-md-3">
+                        <h3>
+                            About Us
+                        </h3>
+                        <p>
+                            Alchemy Software is a growing IT service provider of high-end business solutions to clients
+                            across the globe. Over the years, the company extended the range of its
+                            services in various industries. Alchemy Software devoted its full effort on customer
+                            satisfaction by providing standard software solutions.
+                        </p>
+                        <a href="http://alchemy-bd.com" class="">
+                            Read More
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <h3>
+                            PRODUCTS IN CLOUD
+                        </h3>
+                        <ul>
+                            <li>
+                                <a href="http://cloudtravelbd.com/" target="_blank">
+                                    Travel Agent Management
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://cloudcnfbd.com/" target="_blank">
+                                    C&F Agent Management
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://cloudposbd.com/" target="_blank">
+                                    Point of Sales Management
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://accounts.alchemy-bd.com" target="_blank">
+                                    General Accounts
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://therapy.alchemy-bd.com" target="_blank">
+                                    Therapy Management
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://cloudcafebd.com/" target="_blank">
+                                    Restaurant Management
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://rx.cloudlabbd.com/" target="_blank">
+                                    Prescription (Rx) Management
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://cloudlabbd.com/" target="_blank">
+                                    Lab Management
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://hospital.cloudlabbd.com/" target="_blank">
+                                    Hospital Management
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://demoprod.cloudlabbd.com/" target="_blank">
+                                    Hotel Management
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-3">
+                        <h3>
+                            SERVICES WE PROVIDE
+                        </h3>
+                        Ready Software Packages<br />
+                        ERP Software Development<br />
+                        Web Application Development<br />
+                        Mobile Application Development<br />
+                        E-commerce Site Development<br />
+                        Website Development<br />
+                        SMS Integrated Application<br />
+                        Customized Software<br />
+                        API Integration<br />
+                        SEO (Search Engine Optimization)<br />
+                        Security & Surveillance System
+                    </div>
+                    <div class="col-md-3">
+                        <h3>
+                            We are for our clients
+                        </h3>
+                        <a href="http://client.alchemy-bd.com" target="_blank"
+                           class="btn btn-primary clientLoginBtn btn-xs">
+                            <i class="fa fa-user">
+                            </i>Login
+                        </a>
+                        <span style="font-size: 11px;padding-left: 2px;position: relative;top: 4px;">
+                            200+ clients use this.
+                        </span>
+                        <h3>
+                            We are in Facebook
+                        </h3>
+                        <iframe src="http://www.facebook.com/plugins/like.php?href=http://www.facebook.com/AlchemySoftware"
+                                scrolling="no" frameborder="0" style="border:none; width:240px;height:auto"></iframe>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        <br />
+    </section>
+    <!--end top footer-->
+    <!--footer part-->
+    <footer>
+        <section id="footer">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-12">
+                        <p>Developed By : <a href="http://www.alchemy-bd.com" target="_blank">Alchemy Software</a></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </footer>
+    <!--end footer part-->
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+        @Html.ValidationSummary(true)
+
+         <!-- login screen -->
+
+        <div id="loginScreen">
+            <div id="loginHeader">
+                <div id="loginClose">
+                    <a href="#" style="text-decoration:none" id="closeForm"><p>&times;</p></a>
+                </div>
+                <h2>Alchemy Software</h2>
+                <p>Artificier For Animating Your Aspiration</p>
+            </div>
+            @if (ViewData["ErrorMessage"] != null)
+            {  
+                <br />
+                <br />
+                <br />
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-6">
+                        <div class="alert alert-danger text-center" role="alert" style="color: #FFFFFF;background-color: #CB5454;  border-color: #CB5454;padding: 10px 20px 10px 50px;">
+                            <button type="button" class="close" data-dismiss="alert" style="padding: 7px 10px; background: #FFFFFF; border: 1px; border-radius: 40px;">&times;</button>
+                            <h5>Warning!  @ViewData["ErrorMessage"]<i style="color: #ffffff" class="fa fa-question-circle fa-1x"></i></h5>
+                        </div>
+                    </div>
+                    <div class="col-md-3"></div>
+                </div>
+            }
+
+            <div id="navigation">
+                <a href="#" style="text-decoration:none" id="btnLoginBody">LOGIN</a>
+            </div>
+            <!-- login body -->
+
+            <div id="loginBody" class="mainBody">
+                <p class="Arrow"><i class="fa fa-caret-up fa-2x"></i></p>
+                <form action="#">
+                    @Html.TextBoxFor(m => m.LOGINID, htmlAttributes: new { @class = "form-control", placeholder = "Login ID" })
+                    @Html.ValidationMessageFor(model => model.LOGINID, "", new { @class = "text-danger", style = "float: left" })
+
+                    @Html.PasswordFor(m => m.LOGINPW, htmlAttributes: new { @class = "form-control", placeholder = "Password" })
+                    @Html.ValidationMessageFor(model => model.LOGINPW, "", new { @class = "text-danger", style = "float: left" })
+
+                    @Html.TextBoxFor(model => model.LOGLTUDE, new { id = "latlon", style = "display: none;" })
+                    <input id="lat" type="hidden" />
+                    <input id="lon" type="hidden" />
+
+                    <button type="submit" class="btn btn-primary" style="background: #2e6da4; color: #FFF;">Login</button>
+                    @*<input type="text" class="form-control" placeholder="Email">
+                        <input type="text" class="form-control" placeholder="Password">
+                        <br />
+                        <button type="submit" class="btn btn-primary">Login</button>*@
+                </form>
+                <br />
+                <p><a href="#" id="btnForgotPass">Forgot my password</a></p>
+            </div>
+            <!-- end login body -->
+            <!-- reset password body -->
+            <div id="passwordResetBody" class="mainBody">
+                <h4 align="left">Reset your password</h4>
+                <p align="left">
+                    Enter your email address below. We'll look for your account and send you a password
+                    reset email
+                </p>
+                <br />
+                <form action="#">
+                    <input type="text" class="form-control" placeholder="Email">
+                    <br />
+                    <button type="submit" class="btn btn-primary" style="background: #2e6da4; color: #FFF;">Send Password Reset</button>
+                </form>
+                <br />
+
+            </div>
+            <!-- end reset password -->
+        </div>
+
+
+        //Latitute & longitude
+        <script src="http://maps.google.com/maps/api/js?sensor=false"></script>
+
+        <script language="javascript" type="text/javascript">
+            $(function () {
+                navigator.geolocation.getCurrentPosition(showPosition);
+                //navigator.geolocation.getCurrentPosition(showPosition, positionError);
+
+                function showPosition(position) {
+                    var coordinates = position.coords;
+                    $("#lat").val(coordinates.latitude);
+                    $("#lon").val(coordinates.longitude);
+
+                    $("#latlon").val(
+                        $("#lat").val() + "," + $("#lon").val()
+                    );
+                }
+            });
+
+        </script>
+    }
+
+    <a href="#" id="backToTop"><i data-toggle="tooltip" data-placement="top" title="Go to top" class="fa  fa-chevron-circle-up fa-2x"></i></a>
+    <!-- other scripts -->
+
+    <script src="~/Content/homeDesign/js/bootstrap.min.js"></script>
+
+
+    <script src="~/Content/homeDesign/owl-carousel/owl.carousel.js"></script>
+    <script src="~/Content/homeDesign/js/functions.js"></script>
+    <script src="~/Content/homeDesign/js/jquery.cookie.js"></script>
+    <script src="~/Content/homeDesign/js/loginScreen.js"></script>
+    <!-- end other scripts -->
+</body>
+</html>
+
+@*@section Scripts {
+        @Scripts.Render("~/bundles/jqueryval")
+    }*@
+
+
+
+
+
+

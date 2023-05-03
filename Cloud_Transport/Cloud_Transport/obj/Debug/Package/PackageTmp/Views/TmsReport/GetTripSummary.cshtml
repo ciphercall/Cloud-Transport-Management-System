@@ -1,0 +1,331 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using System.Security.Cryptography.X509Certificates
+@using System.Text.RegularExpressions
+@using Cloud_Transport.DataAccess
+@using Cloud_Transport.Models
+
+@{
+    ViewBag.Title = "GetTripSummary";
+    Layout = null;
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+
+    CnfDbContext db = new CnfDbContext();
+
+
+    Int64 companyId = Convert.ToInt64(Model.TmsTripmst.COMPID);
+    String monthYear = Convert.ToString(Model.TmsTrip.TRIPMY);
+    Int64 costPid = Convert.ToInt64(Model.TmsTrip.COSTPID);
+    Int64 tripNo = Convert.ToInt64(Model.TmsTrip.TRIPNO);
+
+    string companyName = "", address = "", contactNo = "", address2 = "";
+    var re = from m in db.AslCompanyDbSet where m.COMPID == companyId select new { m.COMPNM, m.ADDRESS, m.CONTACTNO };
+    foreach (var n in re)
+    {
+        companyName = n.COMPNM;
+        address = n.ADDRESS;
+        contactNo = n.CONTACTNO;
+    }
+    var compNm = companyName;
+    var Address = address;
+    var contactno = contactNo;
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+    String VehicleNO = "";
+    var findVehicleNO = (from m in db.GlCostPoolDbSet where m.COMPID == companyId && m.COSTPID == costPid select new { m.COSTPID, m.COSTPNM }).ToList();
+    foreach (var get in findVehicleNO)
+    {
+        VehicleNO = get.COSTPNM;
+    }
+
+    String PartyName = "", Destination = "", TripType = "", TripFrom = "", TripTo = "";
+    Decimal FareAmount = 0, Demurrage = 0, otherCharge = 0, TotalCharge = 0;
+    Int64 partyId = 0;
+    var findTmsTripInformation = (from m in db.TmsTripDbSet
+                                  where m.COMPID == companyId && m.COSTPID == costPid && m.TRIPMY == monthYear && m.TRIPNO == tripNo
+                                  select new { m.TRIPTP, m.TRIPFR, m.TRIPTO, m.PARTYID, m.CDESTN, m.AMTFARE, m.AMTDEMI, m.AMTOTC, m.AMTTOT }).Distinct().ToList();
+    foreach (var get in findTmsTripInformation)
+    {
+        FareAmount = Convert.ToDecimal(get.AMTFARE);
+        Demurrage = Convert.ToDecimal(get.AMTDEMI);
+        otherCharge = Convert.ToDecimal(get.AMTOTC);
+        TotalCharge = Convert.ToDecimal(get.AMTTOT);
+        Destination = get.CDESTN;
+        TripType = get.TRIPTP;
+        TripFrom = get.TRIPFR;
+        TripTo = get.TRIPTO;
+        partyId = Convert.ToInt64(get.PARTYID);
+        break;
+    }
+
+
+    Int64 headCD = Convert.ToInt64(companyId + "103");
+    var find_Partyname = (from n in db.GlAcchartDbSet where n.COMPID == companyId && n.HEADCD == headCD && n.ACCOUNTCD == partyId select new { n.ACCOUNTCD, n.ACCOUNTNM }).Distinct().ToList();
+    foreach (var item in find_Partyname)
+    {
+        PartyName = item.ACCOUNTNM;
+        break;
+    }
+
+
+
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+
+</head>
+<body style=" background-color:#fafafa;">
+    <div style="width: 960px; margin: 0px auto; border: 1px solid #d3d3d3; border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); background: none repeat scroll 0 0 white;">
+        <table id="mainTable" border="0" width="100%">
+            <thead>
+                <tr>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                </tr>
+                <tr style="background-color: #00689b">
+                    <td colspan="13">
+                        <h3 style="color: white;padding:4px">@compNm</h3>
+                        <p style="color:white;padding-left:4px">@Address<br /> @address2</p>
+                    </td>
+                    <td colspan="7" style="color: white;padding:8px" align="right">
+                        Powered By<br />Alchemy Software
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="13" align="left" style="padding: 4px; font-weight: bold">TRIP SUMMARY</td>
+                    <td align="right" colspan="7" style="padding: 8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+                </tr>
+                <tr style="outline: thin solid">
+                    <td colspan="2" align="left">Trip No</td>
+                    <td colspan="8" style="font-weight: bold">: @tripNo</td>
+                    <td colspan="2" align="right">Month-Year</td>
+                    <td colspan="8" style="font-weight: bold">: @monthYear</td>
+                </tr>
+                <tr style="outline: thin solid">
+                    <td colspan="2" align="left">Vehicle No</td>
+                    <td colspan="8" style="font-weight: bold">: @VehicleNO</td>
+                    <td colspan="2" align="right">Party</td>
+                    <td colspan="8" style="font-weight: bold">: @PartyName</td>
+                </tr>
+                <tr style="outline: thin solid">
+                    <td colspan="2" align="left">Trip Type</td>
+                    <td colspan="7" style="font-weight: bold">: @TripType</td>
+                    <td colspan="3" align="right">Collect Destination</td>
+                    <td colspan="8" style="font-weight: bold">: @Destination</td>
+                </tr>
+                <tr style="outline: thin solid">
+                    <td colspan="2" align="left">Trip From</td>
+                    <td colspan="8" style="font-weight: bold">: @TripFrom</td>
+                    <td colspan="2" align="right">Trip To</td>
+                    <td colspan="8" style="font-weight: bold">: @TripTo</td>
+                </tr>
+                @*<tr style="background-color: #00689b; outline: thin solid">
+                        <td colspan="4" style="color: white; padding: 4px" align="center">Vehicle No</td>
+                        <td colspan="4" style="color: white; padding: 4px" align="center">Fare Amount</td>
+                        <td colspan="4" style="color: white; padding: 4px" align="center">Trip Expenses</td>
+                        <td colspan="4" style="color: white; padding: 4px" align="center">Vehicle Exp.</td>
+                        <td colspan="4" style="color: white; padding: 4px" align="center">Profit/Loss</td>
+                    </tr>*@
+
+            </thead>
+            <tbody>
+                @{
+                    <tr>
+                        <td colspan="9" style="vertical-align: top;padding-top: 27px;">
+                            <table style="width: 100%;">
+                                <tr style="outline: thin solid;">
+                                    <td colspan="10" style="font-weight: bold; padding: 4px; " align="center">
+                                        Expense Particulars
+                                    </td>
+                                    <td colspan="10" style="font-weight: bold; padding: 4px; " align="center">
+                                        Amount
+                                    </td>
+                                </tr>
+                                @{
+                                    var find_ExpenseParticulars = (from n in db.GlMasterDbSet
+                                                                   where n.COMPID == companyId && n.TRANSMY == monthYear && n.COSTPID == costPid && n.TRIPNO == tripNo
+                                                                   select new { n.DEBITCD, n.DEBITAMT }).Distinct().ToList();
+                                    String DebitCD = "";
+                                    Decimal totalExpenses = 0, NetReceivables = 0;
+                                    foreach (var get in find_ExpenseParticulars)
+                                    {
+                                        String DebitCD_4 = get.DEBITCD.ToString();
+                                        String SubString_DebitCD = DebitCD_4.Substring(3, 1);
+                                        String ExpenseParticulars = "";
+                                        Decimal Amount = 0;
+                                        if (SubString_DebitCD == "4")
+                                        {
+                                            var find_Accounthead = (from n in db.GlAcchartDbSet where n.COMPID == companyId && n.ACCOUNTCD == get.DEBITCD select new { n.ACCOUNTNM }).Distinct().ToList();
+                                            foreach (var item in find_Accounthead)
+                                            {
+                                                ExpenseParticulars = item.ACCOUNTNM;
+                                                break;
+                                            }
+                                            Amount = Convert.ToDecimal(get.DEBITAMT);
+                                            string S_Amount = Convert.ToString(Amount);
+                                            S_Amount = CommainAmount.AmountwithComma(S_Amount);
+
+                                            <tr style="outline: thin solid #807575">
+                                                <td align="left" colspan="10" style="padding-left: 4px;">
+                                                    @ExpenseParticulars
+                                                </td>
+                                                <td align="right" colspan="10" style="padding-left: 4px;">
+                                                    @S_Amount
+                                                </td>
+                                            </tr>
+                                            totalExpenses = totalExpenses + Amount;
+                                        }
+                                    }
+
+                                    foreach (var get in find_ExpenseParticulars)
+                                    {
+                                        string S_totalExpenses1 = Convert.ToString(totalExpenses);
+                                        S_totalExpenses1 = CommainAmount.AmountwithComma(S_totalExpenses1);
+                                        <tr style="outline: thin solid #807575">
+                                            <td align="right" colspan="10" style="padding-left: 4px;font-weight: bold">
+                                                Total Expenses:
+                                            </td>
+                                            <td align="right" colspan="10" style="padding-left: 4px;font-weight: bold">
+                                                @S_totalExpenses1
+                                            </td>
+                                        </tr>
+                                        break;
+                                    }
+                                    NetReceivables = TotalCharge - totalExpenses;
+
+                                }
+                            </table>
+                        </td>
+                        <td colspan="1"></td>
+                        <td colspan="10" style="padding-top: 27px;">
+                            <table style="width: 100%;">
+                                @{
+                                    string S_FareAmount = Convert.ToString(FareAmount);
+                                    S_FareAmount = CommainAmount.AmountwithComma(S_FareAmount);
+                                    string S_Demurrage = Convert.ToString(Demurrage);
+                                    S_Demurrage = CommainAmount.AmountwithComma(S_Demurrage);
+                                    string S_otherCharge = Convert.ToString(otherCharge);
+                                    S_otherCharge = CommainAmount.AmountwithComma(S_otherCharge);
+                                    string S_TotalCharge = Convert.ToString(TotalCharge);
+                                    S_TotalCharge = CommainAmount.AmountwithComma(S_TotalCharge);
+                                    string S_totalExpenses = Convert.ToString(totalExpenses);
+                                    S_totalExpenses = CommainAmount.AmountwithComma(S_totalExpenses);
+                                    string S_NetReceivables = Convert.ToString(NetReceivables);
+                                    S_NetReceivables = CommainAmount.AmountwithComma(S_NetReceivables);
+                                }
+                                <tr style="outline: thin solid;">
+                                    <td colspan="10" style="font-weight: bold; padding: 4px; " align="center">
+                                        Receivables Particulars
+                                    </td>
+                                    <td colspan="10" style="font-weight: bold; padding: 4px; " align="center">
+                                        Amount
+                                    </td>
+                                </tr>
+                                <tr style="outline: thin solid #807575">
+                                    <td align="left" colspan="10" style="padding-left: 4px;">
+                                        Fare
+                                    </td>
+                                    <td align="right" colspan="10" style="padding-left: 4px;">
+                                        @S_FareAmount
+                                    </td>
+                                </tr>
+                                <tr style="outline: thin solid #807575">
+                                    <td align="left" colspan="10" style="padding-left: 4px;">
+                                        Demurrage
+                                    </td>
+                                    <td align="right" colspan="10" style="padding-left: 4px;">
+                                        @S_Demurrage
+                                    </td>
+                                </tr>
+                                <tr style="outline: thin solid #807575">
+                                    <td align="left" colspan="10" style="padding-left: 4px;">
+                                        Other Charge
+                                    </td>
+                                    <td align="right" colspan="10" style="padding-left: 4px;">
+                                        @S_otherCharge
+                                    </td>
+                                </tr>
+                                <tr style="outline: thin solid #807575">
+                                    <td align="left" colspan="10" style="padding-left: 4px;font-weight: bold">
+                                        Total Receivables
+                                    </td>
+                                    <td align="right" colspan="10" style="padding-left: 4px;font-weight: bold">
+                                        @S_TotalCharge
+                                    </td>
+                                </tr>
+                                <tr style="outline: thin solid #807575">
+                                    <td align="left" colspan="10" style="padding-left: 4px;">
+                                        Less - Expenses
+                                    </td>
+                                    <td align="right" colspan="10" style="padding-left: 4px;">
+                                        @S_totalExpenses
+                                    </td>
+                                </tr>
+                                <tr style="outline: thin solid #807575">
+                                    <td align="left" colspan="10" style="padding-left: 4px;font-weight: bold">
+                                        Net Receivables
+                                    </td>
+                                    <td align="right" colspan="10" style="padding-left: 4px;font-weight: bold">
+                                        @S_NetReceivables
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                }
+
+                <tr>
+                    <td><br /></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>
+
+
+

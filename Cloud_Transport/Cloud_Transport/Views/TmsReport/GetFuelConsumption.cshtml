@@ -1,0 +1,260 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using System.Security.Cryptography.X509Certificates
+@using Cloud_Transport.DataAccess
+@using Cloud_Transport.Models
+
+@{
+    ViewBag.Title = "GetFuelConsumption";
+    Layout = null;
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+
+    CnfDbContext db = new CnfDbContext();
+
+
+    Int64 companyId = Convert.ToInt64(Model.TmsTripmst.COMPID);
+    String MonthYear = Convert.ToString(Model.TmsTripmst.TRIPMY);
+
+
+
+    string companyName = "", address = "", contactNo = "", address2 = "";
+    var re = from m in db.AslCompanyDbSet where m.COMPID == companyId select new { m.COMPNM, m.ADDRESS, m.CONTACTNO };
+    foreach (var n in re)
+    {
+        companyName = n.COMPNM;
+        address = n.ADDRESS;
+        contactNo = n.CONTACTNO;
+    }
+    var compNm = companyName;
+    var Address = address;
+    var contactno = contactNo;
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+
+
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+
+</head>
+<body style=" background-color:#fafafa;">
+    <div style="width: 960px; margin: 0px auto; border: 1px solid #d3d3d3; border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); background: none repeat scroll 0 0 white;">
+        <table id="mainTable" border="0" width="100%">
+            <thead>
+                <tr>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                </tr>
+                <tr style="background-color: #00689b">
+                    <td colspan="13">
+                        <h3 style="color: white;padding:4px">@compNm</h3>
+                        <p style="color:white;padding-left:4px">@Address<br /> @address2</p>
+                    </td>
+                    <td colspan="7" style="color: white;padding:8px" align="right">
+                        Powered By<br />Alchemy Software
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="13" align="left" style="padding: 4px; font-weight: bold">FUEL CONSUMPTION</td>
+                    <td align="right" colspan="7" style="padding: 8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+                </tr>
+                <tr style="outline: thin solid">
+                    <td colspan="2" align="left" style="padding: 4px">Month-Year</td>
+                    <td colspan="10" style="font-weight: bold">: @MonthYear</td>
+                </tr>
+                <tr style="background-color: #00689b; outline: thin solid">
+                    <td colspan="2" style="color: white; padding: 4px" align="center">Date</td>
+                    <td colspan="3" style="color: white; padding: 4px" align="center">Trip No</td>
+                    <td colspan="5" style="color: white; padding: 4px" align="center">From</td>
+                    <td colspan="5" style="color: white; padding: 4px" align="center">To</td>
+                    <td colspan="5" style="color: white; padding: 4px" align="center">Transport Name</td>
+                </tr>
+
+            </thead>
+            <tbody>
+                @{
+                    Decimal TotalFuel = 0, TotalMobile = 0;
+                    var MasterData = (from m in db.GlCostPoolDbSet
+                                      join tripmst in db.TmsTripmstDbSet on m.COMPID equals tripmst.COMPID
+                                      where m.COMPID == companyId && tripmst.COMPID == companyId && tripmst.TRIPMY == MonthYear
+                                      && tripmst.COSTPID== m.COSTPID
+                                      select new { m.COSTPID, m.COSTPNM, tripmst.RTRIPNO, tripmst.QTYFUEL, tripmst.QTYMOBIL }).Distinct().ToList();
+
+                    string vehicleNo = "";
+
+                    foreach (var masterdataList in MasterData)
+                    {
+                        //Decimal groupFuel = 0, groupMobile=0;
+
+                        vehicleNo = masterdataList.COSTPNM;
+                        var childData = (from m in db.TmsTripDbSet
+                                         where m.COMPID == companyId && m.COSTPID == masterdataList.COSTPID && m.TRIPMY== MonthYear && m.RTRIPNO== masterdataList.RTRIPNO
+                                         select new { m.COSTPID,m.TRIPDT, m.TRIPMY,m.RTRIPNO,m.TRIPNO,m.TRIPFR,m.TRIPTO,m.PARTYID, m.REMARKS }).ToList();
+
+                        if (childData.Count != 0)
+                        {
+                            String fuel = "", mobil = "";
+                            string S_fuel = Convert.ToString(masterdataList.QTYFUEL);
+                            fuel = CommainAmount.AmountwithComma(S_fuel);
+                            string S_mobil = Convert.ToString(masterdataList.QTYMOBIL);
+                            mobil = CommainAmount.AmountwithComma(S_mobil);
+                            <tr>
+                                <td><br /></td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" align="left" style="padding-left: 4px;">Vehicle No :</td>
+                                <td colspan="4" align="left" style="font-weight: bold; padding-left: 4px;">@vehicleNo</td>
+                                <td colspan="3" align="right" style="padding-left: 4px;">Round Trip No :</td>
+                                <td colspan="2" align="left" style="font-weight: bold; padding-left: 4px;">@masterdataList.RTRIPNO</td>
+                                <td colspan="2" align="right" style="padding-left: 4px;">Fuel :</td>
+                                <td colspan="3" align="left" style="font-weight: bold; padding-left: 4px;">@fuel</td>
+                                <td colspan="2" align="right" style="padding-left: 4px;">Mobil :</td>
+                                <td colspan="2" align="left" style="font-weight: bold; padding-left: 4px;">@mobil</td>
+                            </tr>
+
+                            TotalFuel = Convert.ToDecimal(TotalFuel + masterdataList.QTYFUEL);
+                            TotalMobile = Convert.ToDecimal(TotalMobile + masterdataList.QTYMOBIL);
+                        }
+
+                        string roomTypeName = "";
+                        foreach (var childDatalist in childData)
+                        {
+                            String transportName = "",date="";
+                            var find_Partyname = (from n in db.GlAcchartDbSet where n.COMPID == companyId && n.ACCOUNTCD == childDatalist.PARTYID select new { n.ACCOUNTCD, n.ACCOUNTNM }).ToList();
+                            foreach (var get in find_Partyname)
+                            {
+                                transportName = get.ACCOUNTNM;
+                                break;
+                            }
+                            //var getRoomType = (from m in db.TmsTripmstDbSet where m.COMPID == companyId && m.RTRIPNO == childDatalist.RTRIPNO && m.COSTPID== childDatalist.COSTPID && m.TRIPMY==childDatalist.TRIPMY
+                            //                   select new { m.QTYFUEL,m.QTYMOBIL }).ToList();
+                            //foreach (var get in getRoomType)
+                            //{
+                            //    string S_fuel = Convert.ToString(get.QTYFUEL);
+                            //    fuel = CommainAmount.AmountwithComma(S_fuel);
+                            //    string S_mobil = Convert.ToString(get.QTYMOBIL);
+                            //    mobil = CommainAmount.AmountwithComma(S_mobil);
+                            //    groupFuel = Convert.ToDecimal(groupFuel + get.QTYFUEL);
+                            //    groupMobile = Convert.ToDecimal(groupMobile + get.QTYMOBIL);
+                            //}
+                            DateTime date1 = Convert.ToDateTime(childDatalist.TRIPDT);
+                            date = date1.ToString("dd-MMM-yyyy");
+
+                            <tr style="outline: thin solid #807575">
+                                <td align="left" colspan="2" style="padding-left: 4px">
+                                    @date
+                                </td>
+                                <td align="center" colspan="3" style="padding-left: 4px">
+                                    @childDatalist.TRIPNO
+                                </td>
+                                <td align="left" colspan="5" style="padding-left: 4px">
+                                    @childDatalist.TRIPFR
+                                </td>
+                                <td align="left" colspan="5" style="padding-left: 4px">
+                                    @childDatalist.TRIPTO
+                                </td>
+                                <td align="left" colspan="5" style="padding-left: 4px">
+                                    @transportName
+                                </td>
+                                @*<td align="right" colspan="3" style="padding-left: 4px">
+                                    @fuel
+                                </td>
+                                <td align="right" colspan="3" style="padding-left: 4px">
+                                    @mobil
+                                </td>*@
+                            </tr>
+
+                        }
+
+
+                        @*foreach (var childDatalist in childData)
+                        {
+                            string S_groupFuel = Convert.ToString(groupFuel);
+                            S_groupFuel = CommainAmount.AmountwithComma(S_groupFuel);
+                            string S_groupMobile = Convert.ToString(groupMobile);
+                            S_groupMobile = CommainAmount.AmountwithComma(S_groupMobile);
+                            <tr>
+                                <td align="right" colspan="14">Total Qty : </td>
+                                <td align="right" colspan="3">
+                                    @S_groupFuel
+                                </td>
+                                <td align="right" colspan="3">
+                                    @S_groupMobile
+                                </td>
+                            </tr>
+                            break;
+                        }*@
+
+                    }
+
+
+                    <tr>
+                        <td><br /></td>
+                    </tr>
+                    string S_TotalFuel = Convert.ToString(TotalFuel);
+                    S_TotalFuel = CommainAmount.AmountwithComma(S_TotalFuel);
+                    string S_TotalMobile = Convert.ToString(TotalMobile);
+                    S_TotalMobile = CommainAmount.AmountwithComma(S_TotalMobile);
+                    <tr style="outline: thin solid #807575">
+                        <td colspan="11" align="left"></td>
+                        <td colspan="2" align="right" style="padding-left: 4px;font-weight: bold;">Total Fuel :</td>
+                        <td colspan="3" align="left" style="font-weight: bold; padding-left: 4px;">@S_TotalFuel</td>
+                        <td colspan="2" align="right" style="padding-left: 4px;font-weight: bold;">Total Mobil :</td>
+                        <td colspan="2" align="left" style="font-weight: bold; padding-left: 4px;">@S_TotalMobile</td>
+                    </tr>
+                }
+
+                <tr>
+                    <td><br /></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>
+
+
+

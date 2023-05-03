@@ -1,0 +1,358 @@
+﻿@using System.Web.UI.WebControls
+@using Cloud_Transport.Models
+@model Cloud_Transport.Models.PageModel
+
+@{
+    ViewBag.Title = "Index";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    var LoggedCompId = HttpContext.Current.Session["loggedCompID"].ToString();
+    CnfDbContext db = new CnfDbContext();
+
+}
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+
+    @Html.HiddenFor(model => model.AGlCostPMST.COMPID, new { id = "txtCompId", @Value = LoggedCompId })
+
+    @Html.HiddenFor(model => model.AGlCostPMST.COSTCID, new { id = "txtCOSTCID", @Value = TempData["CostCID"] })
+
+
+
+    <div id="contentHeaderBox">
+        <h1 style="padding-left:16px">Vehicle Information</h1>
+    </div>
+    <br />
+    <div class="col-md-12">
+        <div class="form-group">
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("Vehicle Type", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-4">
+                    @Html.TextBoxFor(model => model.AGlCostPMST.COSTCNM, new { @class = "form-control", id = "txtCOSTCNM", @placeholder = "Group Cost Name", autofocus = true })
+                    @Html.ValidationMessageFor(model => model.AGlCostPMST.COSTCNM, "", new { @class = "text-danger" })
+                </div>
+                @*<td style="width: 15%; border-color: #EEEEEE;">@Html.Label("Group Head Name", htmlAttributes: new { @class = "control-label" })</td>
+                    <td style="width: 25%; border-color: #EEEEEE; ">
+                        @Html.TextBoxFor(model => model.CNF_EXPMSTModel.EXPCNM, new { @class = "form-control", id = "txtExpCName", @placeholder = "Group Head Name" })
+                        @Html.ValidationMessageFor(model => model.CNF_EXPMSTModel.EXPCNM, "", new { @class = "text-danger" })
+                    </td>*@
+                @Html.TextBoxFor(model => model.AGlCostPMST.INSLTUDE, new { id = "latlonPos", style = "display: none;" })
+
+                <input id="lat" type="hidden" />
+                <input id="lon" type="hidden" />
+
+                <div class="col-md-2">
+                    <input id="SubmitId" type="submit" class="btn btn-info" value="Submit" name="command" />
+                </div>
+                <div class="col-md-2">
+
+                    <input id="UpdateId" type="submit" class="btn btn-info" value="Update Vehicle Type" name="command" />
+                </div>
+                <div class="col-md-3">
+                    @if (TempData["message"] != null)
+                    {
+                        <h6 style="color: #BD7F1C">@TempData["message"] </h6><br />
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <hr />
+        </div>
+    </div>
+    <div class="col-md-12">
+        <div class="row">
+            @if (TempData["CostCID"] != null)
+            {
+                @Html.HiddenFor(model => model.AGlCostPMST.COMPID, new { style = "width:3em;", @readonly = "readonly" })
+                @Html.HiddenFor(model => model.AGlCostPool.COSTCID, new { style = "width:3em;", @readonly = "readonly" })
+                @Html.HiddenFor(model => model.AGlCostPool.COSTPID, new { style = "width:3em;", @readonly = "readonly" })
+
+                <div class="col-md-3">
+                    <span> <b>Vehicle Name</b></span>
+                    @Html.TextBoxFor(model => model.AGlCostPool.COSTPNM, new { @class = "form-control input-sm", id = "txtExpNm" })
+                    @if (ViewBag.errorItemid != null)
+                    {
+                        <h6 style="color: #C03523">@ViewBag.errorItemid<i style="color: #C03523" class="fa fa-question-circle fa-1x"></i></h6>
+                    }
+                </div>
+                <div class="col-md-2">
+                    <span> <b>Vehicle No</b></span>
+                    @Html.TextBoxFor(model => model.AGlCostPool.COSTPSID, new { @class = "form-control input-sm", id = "txtExpNm" })
+                </div>
+                <div class="col-md-2">
+                    <span> <b>Purchase Date</b></span>
+                    @if (TempData["Buy_Reg_Date"] != null)
+                    {
+                        @Html.TextBoxFor(model => model.BuyDate, new { @class = "form-control input-sm", id = "txtBuyDate" })
+                    }
+                    else
+                    {
+                        @Html.TextBoxFor(model => model.AGlCostPool.BUYDT, new { @class = "form-control input-sm", id = "txtBuyDate" })
+                    }
+
+                </div>
+                <div class="col-md-2">
+                    <span> <b>Reg. Date</b></span>
+                    @if (TempData["Buy_Reg_Date"] != null)
+                    {
+                        @Html.TextBoxFor(model => model.RegDate, new { @class = "form-control input-sm", id = "txtRegDate" })
+                    }
+                    else
+                    {
+                        @Html.TextBoxFor(model => model.AGlCostPool.REGDT, new { @class = "form-control input-sm", id = "txtRegDate" })
+                    }
+
+                </div>
+                <div class="col-md-2">
+                    <span> <b>Vehicle Details</b></span>
+                    @Html.TextBoxFor(model => model.AGlCostPool.REMARKS, new { @class = "form-control input-sm", id = "txtRemarks" })
+                </div>
+
+                if (TempData["ShowAddButton"] == null)
+                {
+                    <div class="col-md-1">
+                        <input type="submit" class="btn btn-info" value="Update" id="btnUpdate" name="command" style="margin-top: 20px; margin-left: 5px" />
+                    </div>
+                }
+                else
+                {
+                    <div class="col-md-1">
+                        <span></span>
+                        <input type="submit" class="btn btn-info" value="Add" id="btnAdd" name="command" style="margin-top: 20px; margin-left: 5px" />
+                    </div>
+                }
+            }
+        </div>
+
+        <br />
+        <div class="row">
+            @if (TempData["CostCID"] != null)
+            {
+
+                var CostCID = Convert.ToInt64(TempData["CostCID"]);
+                Int64 LogCompId = Convert.ToInt64(HttpContext.Current.Session["loggedCompID"]);
+                var res = db.GlCostPoolDbSet.Where(d => d.COSTCID == CostCID && d.COMPID == LogCompId);
+                <div class="panel panel-primary">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <tr>
+                                <td style="padding-left:16px">
+                                    <h6>Vehicle Name</h6>
+                                </td>
+                                <td>
+                                    <h6>Vehicle No</h6>
+                                </td>
+                                <td>
+                                    <h6>Purchase Date</h6>
+                                </td>
+                                <td>
+                                    <h6>Reg.Date</h6>
+                                </td>
+                                <td>
+                                    <h6>Vehicle Details</h6>
+                                </td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+
+                            @foreach (var item in res)
+                            {
+                                String buyD = "", regD = "";
+                                if (item.BUYDT != null)
+                                {
+                                    DateTime buyDate = Convert.ToDateTime(item.BUYDT);
+                                    buyD = buyDate.ToString("dd-MMM-yyyy");
+                                }
+                                if (item.REGDT != null)
+                                {
+                                    DateTime regDate = Convert.ToDateTime(item.REGDT);
+                                    regD = regDate.ToString("dd-MMM-yyyy");
+                                }
+
+
+                                <tr>
+                                    @Html.HiddenFor(model => item.COMPID, new { style = "width:3em;", @readonly = "readonly" })
+                                    @Html.HiddenFor(model => item.COSTCID, new { style = "width:3em;", @readonly = "readonly" })
+                                    @Html.HiddenFor(model => item.COSTPID, new { style = "width:3em;", @readonly = "readonly" })
+                                    @Html.HiddenFor(model => item.CostPLID, new { style = "width:3em;", @readonly = "readonly" })
+
+                                    <td style="padding-left:16px">
+                                        @Html.DisplayFor(model => item.COSTPNM, new { style = "width:10em;", id = "txtExpNm", @readonly = "readonly" })
+                                    </td>
+                                    <td>
+                                        @Html.DisplayFor(model => item.COSTPSID, new { style = "width: 7em;", id = "txtRemarks", @readonly = "readonly" })
+                                    </td>
+                                    <td>
+                                        @buyD
+                                    </td>
+                                    <td>
+                                        @regD
+                                    </td>
+                                    <td>
+                                        @Html.DisplayFor(model => item.REMARKS, new { style = "width: 7em;", id = "txtRemarks", @readonly = "readonly" })
+                                    </td>
+                                    <td>
+                                        <span>
+                                            <a href="@Url.Action("EditAccountUpdate", new { id = item.CostPLID, cid = item.COMPID, Costcid = item.COSTCID, costPId = item.COSTPID, costPName = item.COSTPNM, buyDate =buyD, regDate= regD })" class="btn btn-sm btn-info">
+                                                <span class="glyphicon glyphicon-pencil"></span>
+                                            </a>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span>
+                                            <a href="@Url.Action("AccountDelete", new { id = item.CostPLID, cid = item.COMPID, Costcid = item.COSTCID, costPId = item.COSTPID, costPName = item.COSTPNM })" class="btn btn-sm btn-danger">
+                                                <span class="glyphicon glyphicon-remove"></span>
+                                            </a>
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+
+                        </table>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped"></table>
+                </div>
+            }
+        </div>
+    </div>
+
+
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+
+            $('#txtCOSTCNM').autocomplete({
+
+                source: '@Url.Action("TagSearch", "CostPool")',
+                change: $('#txtCOSTCNM').keyup(function (e) {
+                    $('#txtCOSTCNM').keyup(_.debounce(txtOneChanged(e.keyCode), 1000));
+                }),
+                select: function (event, ui) {
+                    $("#txtCOSTCNM").val(ui.item.label);
+                    txtOneChanged();
+                },
+            });
+
+
+
+
+            function txtOneChanged(value) {
+                if (value != 8) {
+                    var changedText = $("#txtCOSTCNM").val();
+                    var txtBox = document.getElementById('txtCOSTCNM');
+                    var txtBox1 = document.getElementById('txtCOSTCID');
+
+                    if (changedText != "") {
+                        $.getJSON(
+                      '/CostPool/keyword', { "ChangedText": changedText },
+                       function (result) {
+                           txtBox.value = result.Costcnm;
+                           txtBox1.value = result.costcid;
+
+                           document.getElementById("txtCOSTCNM").focus();
+                           //document.getElementById("SubmitId").focus();
+                       });
+                    }
+                }
+            }
+
+
+            $("#txtBuyDate").datepicker({
+                dateFormat: 'dd-M-yy',
+                changeYear: true,
+                onClose: function (dateText, inst) {
+                    document.getElementById("txtRegDate").focus();
+                }
+            });
+
+            $("#txtRegDate").datepicker({
+                dateFormat: 'dd-M-yy',
+                changeYear: true,
+                onClose: function (dateText, inst) {
+                    document.getElementById("txtRemarks").focus();
+                }
+            });
+
+        });
+
+
+    </script>
+
+
+
+
+
+
+    //Latitute & longitude
+    <script src="http://maps.google.com/maps/api/js?sensor=false">
+    </script>
+
+    <script language="javascript" type="text/javascript">
+        $(function () {
+            navigator.geolocation.getCurrentPosition(showPosition);
+            //navigator.geolocation.getCurrentPosition(showPosition, positionError);
+
+            function showPosition(position) {
+                var coordinates = position.coords;
+                $("#lat").val(coordinates.latitude);
+                $("#lon").val(coordinates.longitude);
+
+                $("#latlonPos").val(
+                    $("#lat").val() + "," + $("#lon").val()
+                );
+                $("#latlonRms").val(
+                    $("#lat").val() + "," + $("#lon").val()
+                );
+            }
+        });
+    </script>
+    <style type="text/css">
+        .ui-autocomplete {
+            position: absolute;
+            cursor: default;
+            background: #f0ffff;
+            max-height: 200px;
+            overflow-y: auto;
+            /* prevent horizontal scrollbar */
+            overflow-x: hidden;
+            /* add padding to account for vertical scrollbar */
+            padding-right: 20px;
+        }
+    </style>
+}
+
+<link href="~/Content/themes/base/jquery-ui.css" rel="stylesheet" />
+<script src="~/Scripts/jquery-1.9.1.min.js"></script>
+<script src="~/Scripts/jquery-ui-1.10.4.min.js"></script>
+<script src="~/Scripts/Underscore.js"></script>

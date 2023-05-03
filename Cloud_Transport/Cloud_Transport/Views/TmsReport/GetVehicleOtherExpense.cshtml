@@ -1,0 +1,212 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using System.Security.Cryptography.X509Certificates
+@using Cloud_Transport.DataAccess
+@using Cloud_Transport.Models
+@using Cloud_Transport.Models.GL
+
+@{
+    ViewBag.Title = "GetVehicleOtherExpense";
+    Layout = null;
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+
+    CnfDbContext db = new CnfDbContext();
+
+
+    Int64 companyId = Convert.ToInt64(Model.TmsTripmst.COMPID);
+    String MonthYear = Convert.ToString(Model.TmsTripmst.TRIPMY);
+
+
+    string companyName = "", address = "", contactNo = "", address2 = "";
+    var re = from m in db.AslCompanyDbSet where m.COMPID == companyId select new { m.COMPNM, m.ADDRESS, m.CONTACTNO };
+    foreach (var n in re)
+    {
+        companyName = n.COMPNM;
+        address = n.ADDRESS;
+        contactNo = n.CONTACTNO;
+    }
+    var compNm = companyName;
+    var Address = address;
+    var contactno = contactNo;
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+
+
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+
+</head>
+<body style=" background-color:#fafafa;">
+    <div style="width: 960px; margin: 0px auto; border: 1px solid #d3d3d3; border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); background: none repeat scroll 0 0 white;">
+        <table id="mainTable" border="0" width="100%">
+            <thead>
+                <tr>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                </tr>
+                <tr style="background-color: #00689b">
+                    <td colspan="13">
+                        <h3 style="color: white;padding:4px">@compNm</h3>
+                        <p style="color:white;padding-left:4px">@Address<br /> @address2</p>
+                    </td>
+                    <td colspan="7" style="color: white;padding:8px" align="right">
+                        Powered By<br />Alchemy Software
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="13" align="left" style="padding: 4px; font-weight: bold">VEHICLE-OTHER EXPENSE</td>
+                    <td align="right" colspan="7" style="padding: 8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+                </tr>
+                <tr style="outline: thin solid">
+                    <td colspan="2" align="left" style="padding: 4px">Month-Year</td>
+                    <td colspan="10" style="font-weight: bold">: @MonthYear</td>
+                </tr>
+                <tr style="background-color: #00689b; outline: thin solid">
+                    <td colspan="2" style="color: white; padding: 4px" align="center">Date</td>
+                    <td colspan="2" style="color: white; padding: 4px" align="center">Type</td>
+                    <td colspan="2" style="color: white; padding: 4px" align="center">Invoice</td>
+                    <td colspan="5" style="color: white; padding: 4px" align="center">Particulars</td>
+                    <td colspan="6" style="color: white; padding: 4px" align="center">Remarks</td>
+                    <td colspan="3" style="color: white; padding: 4px" align="center">Amount</td>
+                </tr>
+
+            </thead>
+            <tbody>
+                @{
+                    var MasterData = (from m in db.GlCostPoolDbSet where m.COMPID == companyId select new { m.COSTPID, m.COSTPNM }).ToList();
+                    string vehicleNo = "";
+
+                    foreach (var masterdataList in MasterData)
+                    {
+                        Decimal groupAmount = 0;
+                        vehicleNo = masterdataList.COSTPNM;
+                        Int64 headType = 4;
+                        var childData = (from m in db.GlMasterDbSet
+                                         join glacchart in db.GlAcchartDbSet on m.COMPID equals glacchart.COMPID
+                                         where m.COMPID == companyId && m.COSTPID == masterdataList.COSTPID && m.TRANSMY == MonthYear && m.TRANSDRCR=="DEBIT" && m.TRANSFOR=="VEHICLE"
+                                          && glacchart.COMPID == companyId && m.DEBITCD == glacchart.ACCOUNTCD && glacchart.HEADTP == headType
+                                         select new { m.COSTPID, m.TRANSTP, m.TRANSMY, m.TRANSDT, m.TRIPNO, m.DEBITAMT, m.TRANSNO, m.REMARKS, m.DEBITCD, glacchart.ACCOUNTNM }).ToList();
+
+                        if (childData.Count != 0)
+                        {
+                            <tr>
+                                <td><br/></td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" align="left" style="padding: 4px">Vehicle No:</td>
+                                <td colspan="18" align="left" style="font-weight: bold; padding-left: 4px;">@vehicleNo</td>
+                            </tr>
+                        }
+
+                        string roomTypeName = "";
+                        foreach (var childDatalist in childData)
+                        {
+                            String Particulars = "", date = "", type = "";
+                            if (childDatalist.TRANSTP == "MPAY")
+                            {
+                                type = "PAYMENT";
+                            }
+                            else if (childDatalist.TRANSTP == "JOUR")
+                            {
+                                type = "JOURNAL";
+                            }
+
+
+                            DateTime date1 = Convert.ToDateTime(childDatalist.TRANSDT);
+                            date = date1.ToString("dd-MMM-yyyy");
+
+
+                            string S_DEBITAMT = Convert.ToString(childDatalist.DEBITAMT);
+                            S_DEBITAMT = CommainAmount.AmountwithComma(S_DEBITAMT);
+                            <tr style="outline: thin solid #807575">
+                                <td align="center" colspan="2" style="padding-left: 4px;font-size: small">
+                                    @date
+                                </td>
+                                <td align="center" colspan="2" style="padding-left: 4px;font-size: small">
+                                    @type
+                                </td>
+                                <td align="center" colspan="2" style="padding-left: 4px;font-size: small">
+                                    @childDatalist.TRANSNO
+                                </td>
+                                <td align="left" colspan="5" style="padding-left: 4px;font-size: small">
+                                    @childDatalist.ACCOUNTNM
+                                </td>
+                                <td align="left" colspan="6" style="padding-left: 4px;font-size: small">
+                                    @childDatalist.REMARKS
+                                </td>
+                                <td align="right" colspan="3" style="padding-left: 4px;font-size: small">
+                                    @S_DEBITAMT
+                                </td>
+                            </tr>
+                            groupAmount = Convert.ToDecimal(groupAmount + childDatalist.DEBITAMT);
+                        }
+
+                        foreach (var childDatalist in childData)
+                        {
+                            string S_groupAmount = Convert.ToString(groupAmount);
+                            S_groupAmount = CommainAmount.AmountwithComma(S_groupAmount);
+                            <tr>
+                                <td align="right" colspan="17">Vehicle Wise Total : </td>
+                                <td align="right" colspan="3" Style="font-weight: bold;font-size: small">
+                                    @S_groupAmount
+                                </td>
+                            </tr>
+                            break;
+                        }
+
+                    }
+                }
+
+                <tr>
+                    <td><br /></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>
+

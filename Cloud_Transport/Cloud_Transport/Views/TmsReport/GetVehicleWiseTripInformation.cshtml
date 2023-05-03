@@ -1,0 +1,264 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using System.Security.Cryptography.X509Certificates
+@using Cloud_Transport.Models
+
+@{
+    ViewBag.Title = "GetVehicleWiseTripInformation";
+    Layout = null;
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+
+    CnfDbContext db = new CnfDbContext();
+
+
+    Int64 companyId = Convert.ToInt64(Model.TmsTripmst.COMPID);
+    String MonthYear = Convert.ToString(Model.TmsTrip.TRIPMY);
+    Int64 costpid = Convert.ToInt64(Model.TmsTrip.COSTPID);
+
+
+    string companyName = "", address = "", contactNo = "", address2 = "";
+    var re = from m in db.AslCompanyDbSet where m.COMPID == companyId select new { m.COMPNM, m.ADDRESS, m.CONTACTNO };
+    foreach (var n in re)
+    {
+        companyName = n.COMPNM;
+        address = n.ADDRESS;
+        contactNo = n.CONTACTNO;
+    }
+    var compNm = companyName;
+    var Address = address;
+    var contactno = contactNo;
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+    string vehicleNo = "";
+    var findVehicleNo = (from m in db.GlCostPoolDbSet where m.COMPID == companyId && m.COSTPID == costpid select new { m.COSTPID, m.COSTPNM }).ToList();
+    foreach (var getVehicleNo in findVehicleNo)
+    {
+        vehicleNo = getVehicleNo.COSTPNM;
+    }
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+
+</head>
+<body style=" background-color:#fafafa;">
+    <div style="width: 960px; margin: 0px auto; border: 1px solid #d3d3d3; border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); background: none repeat scroll 0 0 white;">
+        <table id="mainTable" border="0" width="100%">
+            <thead>
+                <tr>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                </tr>
+                <tr style="background-color: #00689b">
+                    <td colspan="13">
+                        <h3 style="color: white;padding:4px">@compNm</h3>
+                        <p style="color:white;padding-left:4px">@Address<br /> @address2</p>
+                    </td>
+                    <td colspan="7" style="color: white;padding:8px" align="right">
+                        Powered By<br />Alchemy Software
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="13" align="left" style="padding: 4px; font-weight: bold">VEHICLE WISE TRIP INFORMATION</td>
+                    <td align="right" colspan="7" style="padding: 8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+                </tr>
+                <tr style="outline: thin solid">
+                    <td colspan="2" align="left" style="padding: 4px">Month-Year</td>
+                    <td colspan="10" style="font-weight: bold">: @MonthYear</td>
+                </tr>
+                <tr style="outline: thin solid">
+                    <td colspan="2" align="left" style="padding: 4px">Vehicle No</td>
+                    <td colspan="10" style="font-weight: bold">: @vehicleNo</td>
+                </tr>
+                @*<tr style="background-color: #00689b; outline: thin solid">
+                    <td colspan="2" style="color: white; padding: 4px" align="center">Date</td>
+                    <td colspan="2" style="color: white; padding: 4px" align="center">Trip No</td>
+                    <td colspan="3" style="color: white; padding: 4px" align="center">From</td>
+                    <td colspan="3" style="color: white; padding: 4px" align="center">To</td>
+                    <td colspan="4" style="color: white; padding: 4px" align="center">Transport Name</td>
+                    <td colspan="3" style="color: white; padding: 4px" align="center">Fuel</td>
+                    <td colspan="3" style="color: white; padding: 4px" align="center">Mobil</td>
+                </tr>*@
+
+            </thead>
+            <tbody>
+                @{
+
+                    var MasterData = (from m in db.TmsTripmstDbSet where m.COMPID == companyId && m.COSTPID == costpid && m.TRIPMY == MonthYear select new { m.COSTPID, m.TRIPMY, m.RTRIPNO, m.QTYFUEL, m.QTYMOBIL, m.REMARKS }).ToList();
+
+
+                    foreach (var masterdataList in MasterData)
+                    {
+                        var childData = (from m in db.TmsTripDbSet
+                                         where m.COMPID == companyId && m.COSTPID == costpid && m.TRIPMY == MonthYear && m.RTRIPNO== masterdataList.RTRIPNO
+                                         select new { m.COSTPID, m.TRIPDT,m.TRIPTP, m.TRIPMY, m.RTRIPNO, m.TRIPNO, m.TRIPFR, m.TRIPTO,m.CDESTN, m.PARTYID, m.REMARKS,
+                                             m.AMTFARE,m.AMTDEMI,m.AMTOTC,m.AMTTOT }).ToList();
+                        Decimal groupWiseFare = 0, groupWiseDemi=0,groupWiseOtherCharge=0,groupWiseTotalAmount=0;
+                        if (childData.Count != 0)
+                        {
+                            <tr>
+                                <td><br /></td>
+                            </tr>
+                            <tr>
+                                <td colspan="3" align="left" style="padding: 4px">Round Trip No: </td>
+                                <td colspan="4" align="left" style="font-weight: bold; padding-left: 4px;"> @masterdataList.RTRIPNO</td>
+                                <td colspan="4" style="padding: 4px" align="right">Fuel Qty:</td>
+                                <td colspan="3" style="font-weight: bold; padding: 4px" align="left"> @masterdataList.QTYFUEL</td>
+                                <td colspan="3" style="padding: 4px" align="right">Mobil Qty:</td>
+                                <td colspan="3" style="font-weight: bold;padding: 4px" align="left"> @masterdataList.QTYMOBIL</td>
+                            </tr>
+                        }
+
+                        foreach (var childDatalist in childData)
+                        {
+                            <tr style="background-color: #00689b; outline: thin solid">
+                                <td colspan="2" style="font-size: small;color: white; padding: 4px" align="center">Date</td>
+                                <td colspan="1" style="font-size: small;color: white; padding: 4px" align="center">Trip</td>
+                                <td colspan="2" style="font-size: small;color: white; padding: 4px" align="center">From</td>
+                                <td colspan="2" style="font-size: small;color: white; padding: 4px" align="center">To</td>
+                                <td colspan="1" style="font-size: small;color: white; padding: 4px" align="center">Type</td>
+                                <td colspan="4" style="font-size: small;color: white; padding: 4px" align="center">Particular</td>
+                                <td colspan="3" style="font-size: small;color: white; padding: 4px" align="center">Collect.Dest</td>
+                                <td colspan="1" style="font-size: small;color: white; padding: 4px" align="center">Fare</td>
+                                <td colspan="1" style="font-size: small;color: white; padding: 4px" align="center">Demur.</td>
+                                <td colspan="1" style="font-size: small;color: white; padding: 4px" align="center">Other</td>
+                                <td colspan="2" style="font-size: small;color: white; padding: 4px" align="center">Total</td>
+                                @*<td colspan="2" style="font-size: small;color: white; padding: 4px" align="center">Remarks</td>*@
+                            </tr>
+                            break;
+                        }
+
+                        string roomTypeName = "";
+                        foreach (var childDatalist in childData)
+                        {
+                            String particulars = "", date = "";
+                            var find_Partyname = (from n in db.GlAcchartDbSet where n.COMPID == companyId && n.ACCOUNTCD == childDatalist.PARTYID select new { n.ACCOUNTCD, n.ACCOUNTNM }).ToList();
+                            foreach (var get in find_Partyname)
+                            {
+                                particulars = get.ACCOUNTNM;
+                                break;
+                            }
+
+                            DateTime date1 = Convert.ToDateTime(childDatalist.TRIPDT);
+                            date = date1.ToString("dd-MMM-yyyy");
+
+                            <tr style="outline: thin solid #807575">
+                                <td align="left" colspan="2" style="padding-left: 4px; font-size: small">
+                                    @date
+                                </td>
+                                <td align="center" colspan="1" style="padding-left: 4px; font-size: small">
+                                    @childDatalist.TRIPNO
+                                </td>
+                                <td align="left" colspan="2" style="padding-left: 4px; font-size: small">
+                                    @childDatalist.TRIPFR
+                                </td>
+                                <td align="left" colspan="2" style="padding-left: 4px; font-size: small">
+                                    @childDatalist.TRIPTO
+                                </td>
+                                <td align="left" colspan="1" style="padding-left: 4px; font-size: small">
+                                    @childDatalist.TRIPTP
+                                </td>
+                                <td align="left" colspan="4" style="padding-left: 4px; font-size: small">
+                                    @particulars
+                                </td>
+                                <td align="left" colspan="3" style="padding-left: 4px; font-size: small">
+                                    @childDatalist.CDESTN
+                                </td>
+                                <td align="right" colspan="1" style="padding-left: 4px; font-size: small">
+                                    @childDatalist.AMTFARE
+                                </td>
+                                <td align="right" colspan="1" style="padding-left: 4px; font-size: small">
+                                    @childDatalist.AMTDEMI
+                                </td>
+                                <td align="right" colspan="1" style="padding-left: 4px; font-size: small">
+                                    @childDatalist.AMTOTC
+                                </td>
+                                <td align="right" colspan="2" style="padding-left: 4px; font-size: small">
+                                    @childDatalist.AMTTOT
+                                </td>
+                                @*<td align="left" colspan="2" style="padding-left: 4px; font-size: small">
+                                    @childDatalist.REMARKS
+                                </td>*@
+                            </tr>
+                            groupWiseFare = Convert.ToDecimal(groupWiseFare + childDatalist.AMTFARE);
+                            groupWiseDemi = Convert.ToDecimal(groupWiseDemi + childDatalist.AMTDEMI);
+                            groupWiseOtherCharge = Convert.ToDecimal(groupWiseOtherCharge + childDatalist.AMTOTC);
+                            groupWiseTotalAmount = Convert.ToDecimal(groupWiseTotalAmount + childDatalist.AMTTOT);
+                        }
+
+                        foreach (var childDatalist in childData)
+                        {
+                            <tr>
+                                <td align="right" colspan="15" style="padding-left: 4px;font-size: small">
+                                    Trip wise Total:
+                                </td>
+                                <td align="right" colspan="1" style="padding-left: 4px; font-size: small">
+                                    @groupWiseFare
+                                </td>
+                                <td align="right" colspan="1" style="padding-left: 4px;font-size: small">
+                                    @groupWiseDemi
+                                </td>
+                                <td align="right" colspan="1" style="padding-left: 4px; font-size: small">
+                                    @groupWiseOtherCharge
+                                </td>
+                                <td align="right" colspan="2" style="padding-left: 4px;font-size: small">
+                                    @groupWiseTotalAmount
+                                </td>
+                                @*<td align="right" colspan="2" style="padding-left: 4px;font-size: small"></td>*@
+                            </tr>
+                            break;
+                        }
+                    }
+                }
+
+                <tr>
+                    <td><br /></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>
+

@@ -1,0 +1,368 @@
+﻿@using Cloud_Transport.Models
+@model Cloud_Transport.Models.DTO.Tms_ExpenseDTO
+
+@{
+    ViewBag.Title = "Update";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+
+    CnfDbContext db = new CnfDbContext();
+    Int64 LoggedCompId = Convert.ToInt64(System.Web.HttpContext.Current.Session["loggedCompID"]);
+    Int64 loggedUserID = Convert.ToInt64(System.Web.HttpContext.Current.Session["loggedUserID"]);
+
+
+    var createStatus = "";
+    var updateStatus = "";
+    var deleteStatus = "";
+    var status = "";
+
+    var checkPermisiion = (from m in db.AslRoleDbSet
+                           where m.COMPID == LoggedCompId && m.USERID == loggedUserID && m.CONTROLLERNAME == "TmsExpense"
+                           select m).ToList();
+
+
+    foreach (var x in checkPermisiion)
+    {
+        status = x.STATUS.ToString();
+        createStatus = x.INSERTR.ToString();
+        updateStatus = x.UPDATER.ToString();
+        deleteStatus = x.DELETER.ToString();
+    }
+
+
+    if (updateStatus == "I" || status == "I")
+    {
+        Response.Redirect("~/GraphView/Index");
+    }
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+
+
+}
+
+<link href="~/Content/Angular-File/ng-grid.css" rel="stylesheet" />
+
+<link href="~/Content/bootstrap_datepicker_css/datepicker.css" rel="stylesheet" />
+<link href="~/Content/bootstrap_datepicker_css/datepicker3.css" rel="stylesheet" />
+
+<script src="~/Scripts/bootstrap-datepicker.js"></script>
+
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    <div id="contentHeaderBox">
+        <h1 style="padding-left: 16px">Expense - Trip Update</h1>
+        <div class="btn-group pull-right" id="editOption">
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" aria-expanded="false">
+                <i class="fa fa-cog"></i>
+            </button>
+            <ul class="dropdown-menu pull-right" style="" role="menu">
+                <li>
+                    <a href="@Url.Action("Index", "TmsExpense")"><i class="fa fa-file-text"></i> Create</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <br>
+    <div class="col-md-12">
+        <div class="form-group">
+            <div ng-app="TmsExpenseApp" data-ng-controller="ApiTmsExpenseController">
+
+                <div class="row">
+                    <form name="" data-ng-show="" @*style="width:600px;margin:0px auto;"*@>
+                        @Html.HiddenFor(model => model.COMPID, new { id = "txtcompid", style = "width:3em;", @Value = LoggedCompId })
+                        @Html.HiddenFor(model => model.INSUSERID, new { id = "txtInsertUserid", style = "width:3em;", @Value = loggedUserID })
+                        @Html.HiddenFor(model => model.Insert, new { id = "txt_Insertid", style = "width:3em;", @Value = createStatus })
+                        @Html.HiddenFor(model => model.Update, new { id = "txt_Updateid", style = "width:3em;", @Value = updateStatus })
+                        @Html.HiddenFor(model => model.Delete, new { id = "txt_Deleteid", style = "width:3em;", @Value = deleteStatus })
+                        @Html.HiddenFor(model => model.INSLTUDE, new { id = "latlon" })
+                        <input id="lat" type="hidden" />
+                        <input id="lon" type="hidden" />
+
+
+                        <div class="col-md-2">
+                            @Html.Label("name", "Expense Date", htmlAttributes: new { @class = "control-label" })
+                        </div>
+                        <div class="col-md-2">
+                            @Html.TextBoxFor(model => model.TRANSDT, htmlAttributes: new { id = "txt_transDt", @class = "form-control", @autofocus = "true" })
+                            @Html.HiddenFor(model => model.TRANSMY, new { id = "txt_transMonthYear", })
+                        </div>
+                        <div class="col-md-2" style="text-align: right">
+                            @Html.Label("name", "Invoice No", htmlAttributes: new { @class = "control-label " })
+                        </div>
+                        <div class="col-md-2">
+                            @Html.DropDownListFor(model => model.TRANSNO, new SelectList(string.Empty, "Value", "Text"), "- Select -", htmlAttributes: new { id = "txt_transNo", @class = "form-control" })
+                        </div>
+                        <input type="submit" value="Search" data-ng-click="search($event)" class="btn btn-primary" id="btnSearch" style="display: none" />
+
+                        <div class="col-md-2" style="text-align: right">
+                            @Html.Label("name", "Trip No", htmlAttributes: new { @class = "control-label " })
+                        </div>
+                        <div class="col-md-2">
+                            @Html.TextBoxFor(model => model.TRIPNO, htmlAttributes: new { id = "txt_tripNo", @class = "form-control", @readonly = "readonly" })
+                        </div>
+                    </form>
+                </div>
+                <br />
+                <div class="row">
+                    <div class="col-md-2">
+                        @Html.Label("name", "Vehicle No", htmlAttributes: new { @class = "control-label" })
+                    </div>
+                    <div class="col-md-6">
+                        <input type="text" class="form-control input-sm" id="txt_CostpoolName" readonly="readonly"/>
+                        @Html.HiddenFor(model => model.COSTPID, new {id = "txt_Costpid"})
+                    </div>
+                    <div class="col-md-2">
+                        <input type="submit" value="Complete" name="command" class="btn btn-primary" id="btnComplete" />
+                    </div>
+                    <div class="col-md-2">
+                        <input type="submit" value="Print" name="command" class="btn btn-primary" id="btnPrint" formtarget="_blank" />
+                    </div>
+                </div>
+                <br />
+
+                <div class="row" id="gridlevel">
+                    @{
+                        List<SelectListItem> listofAcoountHead = new List<SelectListItem>();
+                        Int64 headCD = Convert.ToInt64(LoggedCompId + "401");
+                        var find_Accounthead = (from n in db.GlAcchartDbSet where n.COMPID == LoggedCompId && n.HEADCD == headCD select new { n.ACCOUNTCD, n.ACCOUNTNM }).OrderBy(x=>x.ACCOUNTNM).ToList();
+                        foreach (var item in find_Accounthead)
+                        {
+                            listofAcoountHead.Add(new SelectListItem { Text = item.ACCOUNTNM.ToString(), Value = Convert.ToString(item.ACCOUNTCD) });
+                        }
+                    }
+                    <div class="col-md-12">
+                        <div class="panel panel-primary">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <tr>
+                                        <th style="width: 45%">Expense Head Particulars</th>
+                                        <th style="width: 20%">Amount</th>
+                                        <th style="width: 25%">Remarks</th>
+                                        <th style="width: 10%"></th>
+                                    </tr>
+                                    <tr>
+                                        <td style="width: 45%">
+                                            @Html.DropDownListFor(model => model.DEBITCD, listofAcoountHead, "- Select -", htmlAttributes: new { id = "txtDebitCD", @class = "form-control", @data_ng_model = "newChild.DEBITCD" })
+                                        </td>
+                                        <td style="width: 20%">
+                                            @Html.TextBoxFor(model => model.AMOUNT, htmlAttributes: new { id = "txtAmount", @class = "form-control", @data_ng_model = "newChild.AMOUNT", @type = "number", @step = "any", @min = "0", @max = "999999999999999" })
+                                        </td>
+                                        <td style="width: 25%">
+                                            @Html.TextBoxFor(model => model.REMARKS, htmlAttributes: new { id = "txtRemarks", @class = "form-control", @data_ng_model = "newChild.REMARKS", maxlength = "95" })
+                                        </td>
+                                        <td style="width: 15%" id="insertbtn"><input type="submit" value="Insert" data-ng-click="addrow($event)" class="btn btn-primary" /></td>
+                                    </tr>
+                                    <tr data-ng-repeat="testitem in expenseData">
+                                        <td hidden><strong data-ng-hide="testitem.editMode">{{ testitem.ID }}</strong></td>
+                                        <td hidden><p data-ng-hide="testitem.editMode">{{ testitem.COMPID  }}</p></td>
+                                        <td hidden><p data-ng-hide="testitem.editMode">{{ testitem.TRANSMY }}</p></td>
+                                        <td hidden><p data-ng-hide="testitem.editMode">{{ testitem.TRANSNO }}</p></td>
+                                        <td hidden><p data-ng-hide="testitem.editMode">{{ testitem.TRANSSL }}</p></td>
+                                        <td hidden><p data-ng-hide="testitem.editMode">{{ testitem.TRIPNO }}</p></td>
+                                        <td hidden><p data-ng-hide="testitem.editMode">{{ testitem.COSTPID }}</p></td>
+                                        <td style="width: 20%">
+                                            <p data-ng-hide="testitem.editMode">{{ testitem.AccountHeadName }}</p>
+                                            <input class="form-control input-sm" data-ng-show="testitem.editMode" type="text" data-ng-model="testitem.AccountHeadName" id="gridAccountHeadName" readonly="readonly" />
+                                        </td>
+                                        <td style="width: 10%">
+                                            <p data-ng-hide="testitem.editMode">{{ testitem.AMOUNT }}</p>
+                                            <input class="form-control input-sm" data-ng-show="testitem.editMode" type="number" data-ng-model="testitem.AMOUNT" id="gridAmount" step="any" maxlength="10" />
+                                        </td>
+                                        <td style="width: 17%">
+                                            <p data-ng-hide="testitem.editMode">{{ testitem.REMARKS }}</p>
+                                            <input class="form-control input-sm" data-ng-show="testitem.editMode" type="text" data-ng-model="testitem.REMARKS" id="gridRemarksID" maxlength="90" />
+                                        </td>
+                                        <td style="width: 15%">
+                                            <p data-ng-hide="testitem.editMode"><a data-ng-click="toggleEdit(testitem)" href="javascript:;">Edit</a> | <a data-ng-click="deleteItem(testitem)" href="javascript:;">Delete</a></p>
+                                            <p data-ng-show="testitem.editMode"><a data-ng-click="update(testitem)" href="javascript:;">Save</a> | <a data-ng-click="toggleEdit_Cancel(testitem)" href="javascript:;">Cancel</a></p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    @*<div class="col-md-1">
+                        </div>*@
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+                        //Latitute & longitude
+                        <script src="http://maps.google.com/maps/api/js?sensor=false"></script>
+
+                        <script language="javascript" type="text/javascript">
+                            $(function () {
+                                navigator.geolocation.getCurrentPosition(showPosition);
+                                //navigator.geolocation.getCurrentPosition(showPosition, positionError);
+
+                                function showPosition(position) {
+                                    var coordinates = position.coords;
+                                    $("#lat").val(coordinates.latitude);
+                                    $("#lon").val(coordinates.longitude);
+
+                                    $("#latlon").val(
+                                        $("#lat").val() + "," + $("#lon").val()
+                                    );
+                                }
+                            });
+                        </script>
+
+
+                        <script type="text/javascript">
+
+                            $(document).ready(function () {
+
+                                $('#txt_transDt').datepicker({
+                                    format: "dd-M-yyyy",
+                                    autoclose: true,
+                                    todayHighlight: true,
+                                    showOnFocus: true,
+                                }).on('show', function (e) {
+                                    if (e.date) {
+                                        $(this).data('stickyDate', e.date);
+                                    } else {
+                                        $(this).data('stickyDate', null);
+                                    }
+                                }).on('hide', function (e) {
+                                    var stickyDate = $(this).data('stickyDate');
+
+                                    if (!e.date && stickyDate) {
+                                        $(this).datepicker('setDate', stickyDate);
+                                        $(this).data('stickyDate', null);
+                                    }
+                                    document.getElementById("txt_transNo").focus();
+                                });
+
+                                $('#txt_transDt').change(function () {
+                                    var dateText = $("#txt_transDt").val();
+                                    var compid = $('#txtcompid').val();
+
+                                    var txt_transMonthYear = document.getElementById('txt_transMonthYear');
+                                    $.getJSON(
+                                        '/TmsExpense/GetMonthYear', { "DateText": dateText, "Compid": compid },
+                                        function (result) {
+                                            txt_transMonthYear.value = result.myear;
+                                        });
+                                    $("#txt_transMonthYear").val("");
+                                    
+
+                                    var datetxt = $('#txt_transDt').val();
+                                    var companyid = $('#txtcompid').val();
+                                    $.ajax
+                                    ({
+                                        url: '@Url.Action("TrnasNoLoad", "TmsExpense")',
+                                        type: 'post',
+                                        dataType: "json",
+                                        data: { theDate: datetxt, compid: companyid },
+                                        success: function (data) {
+                                            $("#txt_transNo").empty();
+                                            $("#txt_transNo").append('<option value="'
+                                                + "Select" + '">'
+                                                + "Select" + '</option>');
+
+
+                                            $.each(data, function (i, memo) {
+
+                                                $("#txt_transNo").append('<option value="'
+                                                    + memo.Value + '">'
+                                                    + memo.Text + '</option>');
+
+                                            });
+                                        }
+                                    });
+                                });
+
+
+                                $('#txt_transNo').change(function () {
+                                    var monthYear = $("#txt_transMonthYear").val();
+                                    var transNo = $("#txt_transNo").val();
+                                    var compid = $('#txtcompid').val();
+
+                                    var txt_CostpoolName = document.getElementById('txt_CostpoolName');
+                                    var txt_Costpid = document.getElementById('txt_Costpid');
+                                    var tripNo = document.getElementById('txt_tripNo');
+                                    $.getJSON(
+                                        '/TmsExpense/GetTripNoAndCostPoolName', { "TransNo": transNo, "Compid": compid, "MonthYear": monthYear },
+                                        function (result) {
+                                            txt_CostpoolName.value = result.CPname;
+                                            txt_Costpid.value = result.Cpid;
+                                            tripNo.value = result.tripno;
+                                            $('#btnSearch').click();
+                                        });
+                                    $("#txt_CostpoolName").val("");
+                                    $("#txt_Costpid").val("");
+                                    $("#txt_tripNo").val("");
+                                });
+
+
+
+
+                                $('#gridlevel').hide();
+                                $('#btnComplete').hide();
+                                $('#btnPrint').hide();
+                                $('#btnSearch').click(function () {
+                                    var date = $("#txt_transDt").val();
+                                    var myear = $("#txt_transMonthYear").val();
+                                    var memoNo = $("#txt_transNo").val();
+                                    if (date != "" && myear != "" && memoNo != "" && memoNo != 0) {
+                                        $('#gridlevel').show();
+                                        $('#txt_transDt').attr('readonly', true);
+                                        $('#txt_transNo').attr('readonly', true);
+                                        $('#btnComplete').show();
+                                        $('#btnPrint').show();
+                                    } else {
+                                        $('#gridlevel').hide();
+                                        $('#btnComplete').hide();
+                                        $('#btnPrint').hide();
+                                    }
+
+                                });
+
+
+                                $('#btnPrint').click(function () {
+                                    setTimeout(function () { window.location.reload(); }, 100);
+                                });
+
+                            });
+                        </script>
+                        }
+
+
+@*<link href="~/Content/themes/base/jquery-ui.css" rel="stylesheet" />
+    <script src="~/Scripts/jquery-1.9.1.min.js"></script>
+    <script src="~/Scripts/jquery-ui-1.10.4.min.js"></script>*@
+
+
+<script src="~/Scripts/angularjs/1.0.5/angular.js"></script>
+<script src="~/Scripts/TmsExpense/update.js"></script>
+<script src="~/Scripts/angularjs/ui-bootstrap-tpls-0.4.0.js"></script>
+

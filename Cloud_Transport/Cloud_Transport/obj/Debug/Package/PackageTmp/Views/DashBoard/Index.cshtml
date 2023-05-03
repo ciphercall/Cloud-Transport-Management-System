@@ -1,0 +1,170 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using System.Linq
+@using Cloud_Transport.DataAccess
+@using Cloud_Transport.Models
+
+@{
+    ViewBag.Title = "Index";
+    //var userCookie = Request.Cookies["user"];
+    //if (userCookie == null)
+    //{
+    //    Response.Redirect(Url.Action("Index", "Login"));
+    //}
+
+    if (System.Web.HttpContext.Current.Session["loggedCompID"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    Int64 LoggedCompId = Convert.ToInt64(HttpContext.Current.Session["loggedCompID"].ToString());
+    CnfDbContext db = new CnfDbContext();
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+}
+
+@using (Html.BeginForm())
+{
+    if (System.Web.HttpContext.Current.Session["LoggedUserType"] != null && System.Web.HttpContext.Current.Session["LoggedUserStatus"].ToString() == "A" && (System.Web.HttpContext.Current.Session["LoggedUserType"].ToString() == "CompanyAdmin" || System.Web.HttpContext.Current.Session["LoggedUserType"].ToString() == "UserAdmin"))
+    {
+        <div id="contentHeaderBox" style="border-bottom: none;height: auto">
+            <ul class="nav nav-tabs" role="tablist">
+                <li class="active">@Html.ActionLink("Trip Information", "Index", "DashBoard", new { style = "color: black;background-color: gainsboro;" })</li>
+                <li>@Html.ActionLink("Today", "Today", "DashBoard", new { style = "color: black" })</li>
+                @if (System.Web.HttpContext.Current.Session["LoggedUserType"].ToString() != "User")
+                {
+                    <li>@Html.ActionLink("Yesterday", "LastOneDay", "DashBoard", new { style = "color: black" })</li>
+                    <li>@Html.ActionLink("Last 7 Day", "Last7Day", "DashBoard", new { style = "color: black" })</li>
+                    <li>@Html.ActionLink("Last 1 Month", "LastOneMonth", "DashBoard", new { style = "color: black" })</li>
+                    <li>@Html.ActionLink("Last 1 Year", "LastOneYear", "DashBoard", new { style = "color: black" })</li>
+                }
+            </ul>
+        </div>
+        
+
+        string MonthYear = currentDateTime.ToString("MMM-yy").ToUpper();
+
+        Int64 minCostpid = Convert.ToInt64((from vehicle in db.GlCostPoolDbSet
+                                            from trip in db.TmsTripDbSet
+                                            where vehicle.COMPID == LoggedCompId && trip.COMPID == LoggedCompId && trip.TRIPMY == MonthYear && trip.COSTPID == vehicle.COSTPID
+                                            select vehicle.COSTPID).Distinct().Min());
+        Int64 maxCostpid = Convert.ToInt64((from vehicle in db.GlCostPoolDbSet
+                                            from trip in db.TmsTripDbSet
+                                            where vehicle.COMPID == LoggedCompId && trip.COMPID == LoggedCompId && trip.TRIPMY == MonthYear && trip.COSTPID == vehicle.COSTPID
+                                            select vehicle.COSTPID).Distinct().Max());
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">Vehicle Wise Trip Information. <span style="padding-left: 785px">Month: @MonthYear</span></div>
+                    <div class="panel-body">
+                        <div class="table-responsive">
+                            <table class="table table-condensed" style="border-collapse:collapse;">
+                                <thead style="background-color: #DFF0D8;">
+                                    <tr>
+                                        @*<th>&nbsp;</th>*@
+                                        <th style="text-align: left;width: 10%">Trip No</th>
+                                        <th style="text-align: left;width: 15%">Trip From</th>
+                                        <th style="text-align: left; width: 15%">Trip To</th>
+                                        <th style="text-align: left; width: 10%">Trip Type</th>
+                                        <th style="text-align: left; width: 20%">Party name</th>
+                                        <th style="text-align: left; width: 20%">Collect Destination</th>
+                                        <th style="text-align: left;width: 10%"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (Int64 z = minCostpid; z <= maxCostpid; z++)
+                                    {
+                                        Int64 Current_Costpid = z;
+                                        String vehicleName = "";
+                                        var findCostpoolName = (from m in db.GlCostPoolDbSet where m.COMPID == LoggedCompId && m.COSTPID == Current_Costpid select new { m.COSTPID, m.COSTPNM }).ToList();
+                                        foreach (var item in findCostpoolName)
+                                        {
+                                            vehicleName = item.COSTPNM;
+                                            break;
+                                        }
+
+                                        var findtripInfo = (from m in db.TmsTripDbSet where m.COMPID == LoggedCompId && m.COSTPID == Current_Costpid && m.TRIPMY == MonthYear select new { m.COSTPID, m.TRIPNO, m.TRIPFR, m.TRIPTO, m.TRIPTP, m.CDESTN,m.PARTYID }).ToList();
+
+
+                                        if (findtripInfo.Count != 0)
+                                        {
+
+                                            <tr data-toggle="collapse" data-target="#demo1_@Current_Costpid" class="accordion-toggle">
+                                                <th style="text-align: left;width: 10%">Vehicle Name:</th>
+                                                <th style="text-align: left;width: 15%" >@vehicleName</th>
+                                                <th style="text-align: right; width: 15%"></th>
+                                                <th style="text-align: right; width: 10%"></th>
+                                                <th style="text-align: right; width: 20%" ></th>
+                                                <th style="text-align: right; width: 20%"></th>
+                                                <th style="text-align: right;width: 10%">Trip Qty: @findtripInfo.Count</th>
+                                            </tr>
+
+
+                                            <tr>
+                                                <td colspan="12" class="hiddenRow">
+                                                    <div class="accordian-body collapse" id="demo1_@Current_Costpid">
+                                                        <table class="table table-striped" style="border: 1px solid rgba(46, 78, 194, 0.32); box-shadow: 0px 3px 9px #888888; margin-bottom: 6px;">
+                                                            @*<thead>
+                                                                    <tr><td><a href="WorkloadURL">Workload link</a></td><td>Bandwidth: Dandwidth Details</td><td>OBS Endpoint: end point</td></tr>
+                                                                    <tr><th>Access Key</th><th>Secret Key</th><th>Status </th><th> Created</th><th> Expires</th><th>Actions</th></tr>
+                                                                </thead>*@
+
+                                                            @foreach (var item in findtripInfo)
+                                                            {
+                                                                String PartyName = "";
+                                                                var find_Partyname = (from n in db.GlAcchartDbSet where n.COMPID == LoggedCompId && n.ACCOUNTCD == item.PARTYID select new { n.ACCOUNTCD, n.ACCOUNTNM }).ToList();
+                                                                foreach (var get in find_Partyname)
+                                                                {
+                                                                    PartyName = get.ACCOUNTNM;
+                                                                    break;
+                                                                }
+
+                                                                String tripNo = "10390111012" + item.TRIPNO + "12091530018";
+                                                                String vehicleNumber = "30010012602" + item.COSTPID + "98002017890";
+                                                                <tbody>
+                                                                    <tr>
+                                                                        <td style="text-align: left;width: 10%">@item.TRIPNO</td>
+                                                                        <td style="text-align: left;width: 15%">@item.TRIPFR</td>
+                                                                        <td style="text-align: left; width: 15%">@item.TRIPTO</td>
+                                                                        <td style="text-align: left; width: 10%">@item.TRIPTP</td>
+                                                                        <td style="text-align: left; width: 20%">@PartyName</td>
+                                                                        <td style="text-align: left; width: 20%">@item.CDESTN</td>
+                                                                        <td style="text-align: left; width: 10%">
+                                                                            <span>
+                                                                                <a href="@Url.Action("IndexPost", new { tN = tripNo, vn = vehicleNumber, my= MonthYear })" class="btn btn-sm btn-info" target="_blank">
+                                                                                    <i class="fa fa-file-pdf-o"></i>
+                                                                                </a>
+                                                                            </span>
+                                                                        </td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            }
+
+
+                                                        </table>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+
+                            </table>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+
+
+                                                }
+
+                                            }
+
+
